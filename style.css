@@ -68,7 +68,7 @@ button:focus-visible, input:focus-visible, canvas:focus-visible {
   position: absolute;
   inset: 0;
   z-index: -2;
-  background: url("Optional/image2.png") center / cover no-repeat;
+  background: url("Maps/image2.png") center / cover no-repeat;
   image-rendering: pixelated;
 }
 
