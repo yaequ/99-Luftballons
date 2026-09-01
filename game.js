@@ -6,6 +6,10 @@ function imageAsset(src) {
   return image;
 }
 
+function numberedImageAssets(folder, prefix) {
+  return Array.from({ length: 10 }, (_, index) => imageAsset(`${folder}/${prefix} ${index + 1}.png`));
+}
+
 const ASSETS = {
   maps: {
     frost: imageAsset('Maps/image2.png'),
@@ -14,14 +18,13 @@ const ASSETS = {
     mountain: imageAsset('Maps/Grafik_2.png')
   },
   characters: {
-    cactus: imageAsset('Charaktere/Kaktus/turnaround.png'),
-    fan: imageAsset('Charaktere/Geblaese/turnaround.png'),
-    lens: imageAsset('Charaktere/Lupe/turnaround.png')
+    cactus: numberedImageAssets('Charaktere/Kaktus/Kaktus', 'Segment'),
+    fan: numberedImageAssets('Charaktere/Geblaese/Ballon Hunter', 'Ballon Hunter'),
+    lens: numberedImageAssets('Charaktere/Lupe/Fliegerstaffel', 'Fliegerstaffel')
   },
   balloonSheet: imageAsset('Balloons/balloons-spritesheet.png')
 };
 
-const CLEAN_SHEETS = {};
 let cleanBalloonSheet = null;
 
 const CONFIG = {
@@ -32,12 +35,12 @@ const CONFIG = {
   FIXED_STEP: 1 / 60,
   MAX_FRAME_DELTA: 0.1,
   WAVES: 15,
-  CHAR_SHEET: { COLS: 5, ROWS: 2, RENDER_SIZE: 22 },
+  CHARACTER_RENDER: { MAX_WIDTH: 25, HEIGHT: 29 },
   BALLOON_SHEET: { COLS: 8, ROWS: 8, CELL_PADDING: 2, RENDER_SIZE: 18 },
   TOWERS: {
-    cactus: { name: 'Kaktus', cost: 25, range: 45, damage: 0.3, fireRate: 0.58, color: '#43d17d', cropTop: 25 },
-    fan: { name: 'Gebläse', cost: 45, range: 55, damage: 1, fireRate: 0.34, color: '#70a1ff', cropTop: 0 },
-    lens: { name: 'Lupe', cost: 70, range: 65, damage: 3, fireRate: 1, color: '#f1b94d', cropTop: 28 }
+    cactus: { name: 'Kaktus', cost: 25, range: 45, damage: 0.3, fireRate: 0.58, color: '#43d17d', directionFrames: [5, 6, 2, 1, 0, 8, 9, 3] },
+    fan: { name: 'Gebläse', cost: 45, range: 55, damage: 1, fireRate: 0.34, color: '#70a1ff', directionFrames: [4, 3, 2, 1, 0, 8, 7, 6] },
+    lens: { name: 'Lupe', cost: 70, range: 65, damage: 3, fireRate: 1, color: '#f1b94d', directionFrames: [2, 6, 1, 5, 0, 8, 3, 7] }
   },
   BALLOONS: {
     red: { name: 'Rot', cost: 10, income: 1, hp: 1, speed: 60, spriteColumn: 0, popRow: 2 },
@@ -200,10 +203,9 @@ function whenImageReady(image) {
 
 const assetsReady = Promise.all([
   ...Object.values(ASSETS.maps),
-  ...Object.values(ASSETS.characters),
+  ...Object.values(ASSETS.characters).flat(),
   ASSETS.balloonSheet
 ].map(whenImageReady)).then(() => {
-  prepareCharacterSheets();
   prepareBalloonSheet();
   renderTowerPortraits();
   renderBalloonPortraits();
@@ -583,14 +585,8 @@ function updateSide(side, isPlayer, deltaTime) {
 function updateTowerDirection(tower, target) {
   const angle = Math.atan2(target.y - tower.y, target.x - tower.x);
   const degrees = (angle * (180 / Math.PI) + 90 + 360) % 360;
-  if (degrees >= 337.5 || degrees < 22.5) tower.frameIndex = 4;
-  else if (degrees < 67.5) tower.frameIndex = 3;
-  else if (degrees < 112.5) tower.frameIndex = 2;
-  else if (degrees < 157.5) tower.frameIndex = 1;
-  else if (degrees < 202.5) tower.frameIndex = 0;
-  else if (degrees < 247.5) tower.frameIndex = 8;
-  else if (degrees < 292.5) tower.frameIndex = 7;
-  else tower.frameIndex = 6;
+  const directionIndex = Math.round(degrees / 45) % 8;
+  tower.frameIndex = CONFIG.TOWERS[tower.type].directionFrames[directionIndex];
 }
 
 function checkGameOver() {
@@ -693,30 +689,25 @@ function drawBalloonSprite(ctx, column, row, x, y, size) {
 }
 
 function drawTower(ctx, tower, alpha = 1) {
-  const image = CLEAN_SHEETS[tower.type] || ASSETS.characters[tower.type];
+  const frames = ASSETS.characters[tower.type];
+  const image = frames[tower.frameIndex] || frames[0];
   const imageWidth = image.naturalWidth || image.width;
   const imageHeight = image.naturalHeight || image.height;
   if (!imageWidth || !imageHeight) return;
-  const towerData = CONFIG.TOWERS[tower.type];
-  const frameWidth = imageWidth / CONFIG.CHAR_SHEET.COLS;
-  const frameHeight = imageHeight / CONFIG.CHAR_SHEET.ROWS;
-  const column = tower.frameIndex % CONFIG.CHAR_SHEET.COLS;
-  const row = Math.floor(tower.frameIndex / CONFIG.CHAR_SHEET.COLS);
-  const cropTop = towerData.cropTop;
-  const size = CONFIG.CHAR_SHEET.RENDER_SIZE;
+  const renderHeight = CONFIG.CHARACTER_RENDER.HEIGHT;
+  const renderWidth = Math.min(
+    CONFIG.CHARACTER_RENDER.MAX_WIDTH,
+    renderHeight * (imageWidth / imageHeight)
+  );
 
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.drawImage(
     image,
-    column * frameWidth,
-    row * frameHeight + cropTop,
-    frameWidth,
-    frameHeight - cropTop,
-    tower.x - size / 2,
-    tower.y - size / 2 - 4,
-    size,
-    size
+    tower.x - renderWidth / 2,
+    tower.y - renderHeight / 2 - 4,
+    renderWidth,
+    renderHeight
   );
   ctx.restore();
 }
@@ -736,61 +727,25 @@ function renderBuildPreview(ctx) {
 function renderTowerPortraits() {
   document.querySelectorAll('[data-portrait]').forEach((canvas) => {
     const type = canvas.dataset.portrait;
-    const image = CLEAN_SHEETS[type] || ASSETS.characters[type];
+    const image = ASSETS.characters[type][0];
     const imageWidth = image.naturalWidth || image.width;
     const imageHeight = image.naturalHeight || image.height;
     if (!imageWidth || !imageHeight) return;
 
     const ctx = canvas.getContext('2d');
-    const towerData = CONFIG.TOWERS[type];
-    const frameWidth = imageWidth / CONFIG.CHAR_SHEET.COLS;
-    const frameHeight = imageHeight / CONFIG.CHAR_SHEET.ROWS;
-    const sourceHeight = frameHeight - towerData.cropTop;
-    const scale = Math.min(canvas.width / frameWidth, canvas.height / sourceHeight);
-    const width = frameWidth * scale;
-    const height = sourceHeight * scale;
+    const scale = Math.min(canvas.width / imageWidth, canvas.height / imageHeight);
+    const width = imageWidth * scale;
+    const height = imageHeight * scale;
 
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(
       image,
-      0,
-      towerData.cropTop,
-      frameWidth,
-      sourceHeight,
       (canvas.width - width) / 2,
       (canvas.height - height) / 2,
       width,
       height
     );
-  });
-}
-
-function prepareCharacterSheets() {
-  Object.entries(ASSETS.characters).forEach(([type, image]) => {
-    if (!image.complete || image.naturalWidth === 0) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.drawImage(image, 0, 0);
-
-    try {
-      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = pixels.data;
-      for (let index = 0; index < data.length; index += 4) {
-        const red = data[index];
-        const green = data[index + 1];
-        const blue = data[index + 2];
-        const neutral = Math.max(red, green, blue) - Math.min(red, green, blue) < 9;
-        const backgroundGray = red > 188 && red < 232;
-        if (neutral && backgroundGray) data[index + 3] = 0;
-      }
-      ctx.putImageData(pixels, 0, 0);
-      CLEAN_SHEETS[type] = canvas;
-    } catch {
-      CLEAN_SHEETS[type] = image;
-    }
   });
 }
 
