@@ -1,40 +1,29 @@
-# Design QA – 99 Luftballons
+# Design QA – 30-Runden-KI-Duell
 
-- UI reference: `C:\Users\kacpe\AppData\Local\Temp\codex-clipboard-e869a568-5f02-4d9d-9452-804bf2570a5f.png`
-- Balloon source sheet: `C:\Users\kacpe\AppData\Local\Temp\codex-clipboard-3121f642-6398-4792-81e8-934b2e56f854.png`
-- Integrated asset: `Balloons/balloons-spritesheet.png`
-- Expanded implementation: `qa-balloon-interface.png`
-- Collapsed implementation: `qa-interface-collapsed.png`
-- Source/implementation comparison: `qa-balloon-comparison.png`
-- Tested states: active match, player and opponent maps, expanded and collapsed controls, desktop and 390 × 844 mobile viewport
+## Referenzen
 
-## Visual comparison
+- Designkonzept: `C:\Users\k.drozd\.codex\generated_images\01a06b8a-54f0-7463-83d9-fd0a46c88d94\exec-ced221e8-d8b2-4f41-9e11-3c4c75ffca49.png`
+- Desktopprüfung: `C:\Users\k.drozd\.codex\visualizations\2026\09\04\01a06b8a-54f0-7463-83d9-fd0a46c88d94\99-luftballons-desktop.png`
+- Mobilprüfung: `C:\Users\k.drozd\.codex\visualizations\2026\09\04\01a06b8a-54f0-7463-83d9-fd0a46c88d94\99-luftballons-mobile.png`
+- Bossprüfung: `C:\Users\k.drozd\.codex\visualizations\2026\09\04\01a06b8a-54f0-7463-83d9-fd0a46c88d94\99-luftballons-boss.png`
+- KI-Turmfelder: `C:\Users\k.drozd\.codex\visualizations\2026\09\04\01a06b8a-54f0-7463-83d9-fd0a46c88d94\99-luftballons-ai-fields.png`
 
-The supplied balloon sheet is used as the visual source for all four attack types. Red, blue, green, and yellow keep the source silhouette, highlight, pixel edges, and string. The dark sheet background is removed at runtime so the balloons sit cleanly on cards and map artwork. Rendering uses disabled smoothing to preserve pixel sharpness.
+## Ergebnis
 
-The interface still follows the earlier tower-defense reference: compact black HUD, full-width map, framed build pads, instructional callout, and dark lower selection dock. The new toggle collapses that dock completely while keeping map switching, income, HUD, and the restore button available.
+- Desktop 1440 × 900: beide Karten nebeneinander, je 680 × 510 Pixel.
+- Mobil 390 × 844: beide Karten untereinander, je 374 × 280,5 Pixel.
+- Kein horizontaler Überlauf und keine relevanten Konsolenfehler.
+- Lobby enthält keine Raum- oder Mehrspielersteuerung.
+- Kaktus, Gebläse und Lupe bleiben als vorhandene Charakter-Türme erhalten.
+- Tastaturauswahl und Platzierung mit Enter funktionieren.
+- Runde 1 startet mit 100 roten Ballons; Runde 30 enthält zwei Bosse.
+- Sieg nach Abschluss von Runde 30 und Ladefehlerdialog für fehlende Pflichtassets funktionieren.
+- KI kauft in Runde 1 drei Kaktustürme für 75 Gold und erreicht in Runde 5/10/15/19/20 insgesamt 7/18/27/34/42 Türme auf 2/4/6/7/8 vollständig belegten Feldern.
+- Kleine Felder enthalten 3–6, große Felder 5–8 Türme; alle 42 Positionen sind gültig und eindeutig.
 
-## Iteration findings and fixes
+## Konzeptvergleich
 
-- P2: On mobile, long HUD values could clip at the right edge. Fixed with shrinkable level text, tighter economy spacing, equal metric widths, and explicit alignment.
-- P2: The permanent lower dock obscured a large portion of the map. Fixed with an animated desktop collapse and a fully removed mobile dock state.
-- P2: Previous balloon controls did not match the provided art. Replaced with four portraits from the supplied sprite sheet and matching in-map sprites.
-- P3: Disabled attack cards dim the sprite together with the card. This is intentional feedback and remains legible.
-
-## Functional verification
-
-- Quick match loads the playable map: passed.
-- Red, blue, green, and yellow sprite portraits render in the attack panel: passed.
-- Yellow balloon send appears on the opponent route and changes income from +10/s to +17/s: passed.
-- Interface button toggles `aria-expanded`, its label, and the collapsed dock state: passed.
-- Collapsed desktop dock has hidden visibility, zero opacity, and no pointer events: passed.
-- Mobile 390 × 844 expands/collapses the interface without horizontal page overflow: passed.
-- Mobile HUD remains fully readable after the narrow-width correction: passed.
-- The page reloads and starts successfully after the final CSS/JS changes: passed.
-
-## Remaining P3 polish
-
-- A bundled, license-cleared pixel font could match the reference lettering more exactly.
-- A later art pass could provide a transparent native sprite sheet and remove the need for runtime background cleanup.
-
-final result: passed
+- Beibehalten: dunkle Pixeloberfläche, Mint-/Cyan-/Gold-Akzente und harte Rahmen.
+- Beibehalten: kompaktes HUD, zwei gleichwertige Karten und Steuerdock unter den Karten.
+- Bewusste Abweichung: vorhandene Karten- und Charakterassets ersetzen die illustrativen Konzeptplatzhalter.
+- Bewusste Abweichung: bestehende Turmnamen und Preise bleiben unverändert.
