@@ -1,138 +1,4 @@
-/* 99 LUFTBALLONS – Vanilla HTML5 Canvas Tower Defense */
-
-function imageAsset(src) {
-  const image = new Image();
-  image.dataset.src = src;
-  return image;
-}
-
-function numberedImageAssets(folder, prefix) {
-  return Array.from({ length: 10 }, (_, index) => imageAsset(`${folder}/${prefix} ${index + 1}.png`));
-}
-
-const ASSETS = {
-  maps: {
-    frost: imageAsset('assets/Maps/image2.webp'),
-    woodland: imageAsset('assets/Maps/Grafik.webp'),
-    desert: imageAsset('assets/Maps/image.webp'),
-    mountain: imageAsset('assets/Maps/Grafik_2.webp')
-  },
-  characters: {
-    cactus: numberedImageAssets('assets/Charaktere/Kaktus/Kaktus', 'Segment'),
-    fan: numberedImageAssets('assets/Charaktere/Geblaese/Ballon Hunter', 'Ballon Hunter'),
-    lens: numberedImageAssets('assets/Charaktere/Lupe/Fliegerstaffel', 'Fliegerstaffel')
-  },
-  balloons: Object.fromEntries(['red', 'blue', 'green', 'yellow'].map((type) => [type,
-    Array.from({ length: type === 'yellow' ? 6 : 7 }, (_, index) =>
-      imageAsset(`assets/Balloons/transparent/${type}/balloon_${type}_frame_${String(index + 1).padStart(2, '0')}.png`))
-  ])),
-  boss: imageAsset('assets/Balloons/boss-balloon.png')
-};
-
-
-
-const CONFIG = {
-  CANVAS_WIDTH: 320,
-  CANVAS_HEIGHT: 240,
-  RENDER_SCALE: 3,
-  GRID_SIZE: 8,
-  FIXED_STEP: 1 / 60,
-  MAX_FRAME_DELTA: 0.1,
-  WAVES: 30,
-  NORMAL_SPAWN_INTERVAL: 0.12,
-  SEND_BATCH_SIZE: 10,
-  SEND_SPAWN_INTERVAL: 0.12,
-  BOSS_SPAWN_INTERVAL: 1.2,
-  INTERMISSION_SECONDS: 5,
-  CHARACTER_RENDER: { MAX_WIDTH: 25, HEIGHT: 29 },
-  TOWERS: {
-    cactus: { name: 'Kaktus', cost: 25, range: 45, damage: 0.3, fireRate: 0.58, color: '#43d17d', directionFrames: [5, 6, 2, 1, 0, 8, 9, 3] },
-    fan: { name: 'Gebläse', cost: 45, range: 55, damage: 1, fireRate: 0.34, color: '#70a1ff', directionFrames: [4, 3, 2, 1, 0, 8, 7, 6] },
-    lens: { name: 'Lupe', cost: 70, range: 65, damage: 3, fireRate: 1, color: '#f1b94d', directionFrames: [2, 6, 1, 5, 0, 8, 3, 7] }
-  },
-  BALLOONS: {
-    red: { name: 'Rot', cost: 10, income: 1, hp: 1, speed: 60, lifeDamage: 1, renderSize: 18 },
-    blue: { name: 'Blau', cost: 25, income: 2, hp: 2, speed: 84, lifeDamage: 1, renderSize: 18 },
-    green: { name: 'Grün', cost: 45, income: 4, hp: 4, speed: 68, lifeDamage: 1, renderSize: 18 },
-    yellow: { name: 'Gelb', cost: 70, income: 7, hp: 7, speed: 48, lifeDamage: 1, renderSize: 18 },
-    boss: { name: 'Boss', hp: 150, speed: 24, lifeDamage: 25, renderSize: 36 }
-  }
-};
-
-const BUILD_ZONES = [
-  { x: 94, y: 31, w: 70, h: 21 },
-  { x: 61, y: 76, w: 75, h: 22 },
-  { x: 212, y: 76, w: 47, h: 22 },
-  { x: 18, y: 108, w: 24, h: 52 },
-  { x: 162, y: 120, w: 84, h: 22 },
-  { x: 282, y: 81, w: 25, h: 65 },
-  { x: 64, y: 165, w: 89, h: 24 },
-  { x: 184, y: 162, w: 50, h: 46 }
-];
-
-const MAP_PATHS = {
-  frost: {
-    route: [
-      { x: 165, y: 200 }, { x: 165, y: 270 }, { x: 195, y: 305 }, { x: 650, y: 305 },
-      { x: 695, y: 335 }, { x: 710, y: 445 }, { x: 730, y: 490 }, { x: 835, y: 455 },
-      { x: 890, y: 350 }, { x: 930, y: 285 }, { x: 1160, y: 285 }, { x: 1200, y: 325 },
-      { x: 1200, y: 665 }, { x: 1160, y: 705 }, { x: 800, y: 710 }, { x: 750, y: 750 },
-      { x: 710, y: 875 }, { x: 670, y: 920 }, { x: 620, y: 935 }, { x: 575, y: 900 },
-      { x: 555, y: 760 }, { x: 515, y: 710 }, { x: 470, y: 680 }, { x: 465, y: 550 },
-      { x: 425, y: 515 }, { x: 260, y: 505 }, { x: 220, y: 545 }, { x: 220, y: 845 },
-      { x: 255, y: 890 }, { x: 555, y: 900 }, { x: 620, y: 935 }, { x: 850, y: 1015 }
-    ]
-  },
-  woodland: {
-    left: [
-      { x: 105, y: 130 }, { x: 105, y: 190 }, { x: 135, y: 215 }, { x: 475, y: 215 },
-      { x: 520, y: 240 }, { x: 545, y: 315 }, { x: 525, y: 340 }, { x: 205, y: 340 },
-      { x: 170, y: 375 }, { x: 170, y: 565 }, { x: 205, y: 600 }, { x: 475, y: 600 },
-      { x: 520, y: 575 }, { x: 550, y: 500 }, { x: 585, y: 475 }, { x: 720, y: 475 },
-      { x: 750, y: 510 }, { x: 750, y: 650 }
-    ],
-    right: [
-      { x: 105, y: 130 }, { x: 105, y: 190 }, { x: 135, y: 215 }, { x: 475, y: 215 },
-      { x: 520, y: 240 }, { x: 545, y: 315 }, { x: 575, y: 350 }, { x: 615, y: 335 },
-      { x: 640, y: 240 }, { x: 675, y: 210 }, { x: 825, y: 210 }, { x: 860, y: 240 },
-      { x: 875, y: 430 }, { x: 845, y: 470 }, { x: 780, y: 475 }, { x: 750, y: 510 },
-      { x: 750, y: 650 }
-    ]
-  },
-  desert: {
-    route: [
-      { x: 165, y: 200 }, { x: 165, y: 270 }, { x: 205, y: 305 }, { x: 650, y: 305 },
-      { x: 700, y: 335 }, { x: 715, y: 430 }, { x: 750, y: 470 }, { x: 835, y: 465 },
-      { x: 875, y: 425 }, { x: 880, y: 320 }, { x: 920, y: 275 }, { x: 1175, y: 275 },
-      { x: 1210, y: 320 }, { x: 1210, y: 655 }, { x: 1170, y: 700 }, { x: 805, y: 700 },
-      { x: 760, y: 740 }, { x: 760, y: 875 }, { x: 720, y: 925 }, { x: 620, y: 925 },
-      { x: 580, y: 885 }, { x: 580, y: 760 }, { x: 540, y: 720 }, { x: 500, y: 720 },
-      { x: 450, y: 680 }, { x: 450, y: 530 }, { x: 410, y: 490 }, { x: 260, y: 490 },
-      { x: 220, y: 530 }, { x: 220, y: 840 }, { x: 260, y: 890 }, { x: 500, y: 900 },
-      { x: 550, y: 950 }, { x: 850, y: 1040 }
-    ]
-  },
-  mountain: {
-    route: [
-      { x: 170, y: 205 }, { x: 170, y: 275 }, { x: 205, y: 315 }, { x: 680, y: 315 },
-      { x: 730, y: 345 }, { x: 750, y: 455 }, { x: 725, y: 500 }, { x: 535, y: 520 },
-      { x: 495, y: 560 }, { x: 495, y: 640 }, { x: 455, y: 680 }, { x: 250, y: 700 },
-      { x: 205, y: 740 }, { x: 205, y: 835 }, { x: 250, y: 875 }, { x: 600, y: 885 },
-      { x: 660, y: 920 }, { x: 680, y: 850 }, { x: 700, y: 780 }, { x: 760, y: 700 },
-      { x: 820, y: 620 }, { x: 875, y: 520 }, { x: 900, y: 430 }, { x: 930, y: 350 },
-      { x: 930, y: 310 },
-      { x: 1160, y: 310 }, { x: 1200, y: 350 }, { x: 1200, y: 665 }, { x: 1160, y: 710 },
-      { x: 1050, y: 710 }, { x: 1000, y: 755 }, { x: 1000, y: 885 }
-    ]
-  }
-};
-
-const MAP_DATA = {
-  frost: { id: 'frost', name: 'Frostpfad', image: ASSETS.maps.frost, hudCrop: 53, logicalCrop: 12, paths: [MAP_PATHS.frost.route] },
-  woodland: { id: 'woodland', name: 'Waldweg', image: ASSETS.maps.woodland, hudCrop: 38, logicalCrop: 12, paths: [MAP_PATHS.woodland.left, MAP_PATHS.woodland.right] },
-  desert: { id: 'desert', name: 'Wüstendünen', image: ASSETS.maps.desert, hudCrop: 53, logicalCrop: 12, paths: [MAP_PATHS.desert.route] },
-  mountain: { id: 'mountain', name: 'Bergpass', image: ASSETS.maps.mountain, hudCrop: 50, logicalCrop: 12, paths: [MAP_PATHS.mountain.route] }
-};
+// Spielzustand, Eingaben, Runden, KI und Kampfberechnung.
 
 const screens = {
   lobby: document.getElementById('screen-lobby'),
@@ -140,7 +6,6 @@ const screens = {
 };
 
 const ui = {
-  mapName: document.getElementById('map-name'),
   wave: document.getElementById('wave-counter'),
   p1Hp: document.getElementById('p1-hp'),
   p1Gold: document.getElementById('p1-gold'),
@@ -252,6 +117,8 @@ async function loadMatchAssets() {
   renderBalloonPortraits();
 }
 
+document.getElementById('btn-pause').addEventListener('click', togglePause);
+document.getElementById('btn-back-menu').addEventListener('click', returnToHomepage);
 
 document.getElementById('btn-return-lobby').addEventListener('click', returnToHomepage);
 document.getElementById('btn-retry-load').addEventListener('click', () => startGame(true));
@@ -325,7 +192,7 @@ canvasPlayer.addEventListener('keydown', (event) => {
   } else if (event.key === 'Escape') {
     event.preventDefault();
     clearTowerSelection();
-    showToast('Turmauswahl abgebrochen.');
+
   }
 });
 
@@ -424,16 +291,7 @@ function placeSelectedTower(x = mousePos.x, y = mousePos.y) {
   if (!gameState.selectedTowerType || gameState.paused) return;
   const result = tryBuildTower(gameState.player, gameState.selectedTowerType, x, y);
 
-  if (result === true) {
-    showToast(`${CONFIG.TOWERS[gameState.selectedTowerType].name} gebaut.`);
-    clearTowerSelection();
-  } else if (result === 'zone') {
-    showToast('Türme können nur auf dunklen Bauflächen stehen.');
-  } else if (result === 'occupied') {
-    showToast('Dieser Bauplatz ist bereits belegt.');
-  } else if (result === 'gold') {
-    showToast('Nicht genug Gold.');
-  }
+  if (result === true) clearTowerSelection();
 }
 
 function mapY(map, y) {
@@ -492,7 +350,7 @@ function sendBalloonToEnemy(type) {
   const balloonData = CONFIG.BALLOONS[type];
   if (!balloonData || !Number.isFinite(balloonData.cost)) return;
   if (gameState.player.gold < balloonData.cost) {
-    showToast('Nicht genug Gold für diesen Ballon.');
+
     return;
   }
 
@@ -501,7 +359,7 @@ function sendBalloonToEnemy(type) {
   gameState.enemy.sendQueue.push({ type, remaining: CONFIG.SEND_BATCH_SIZE });
   updateSentBalloons(gameState.enemy, 0);
   updateUI();
-  showToast(`${CONFIG.SEND_BATCH_SIZE} ${balloonData.name}-Ballons gesendet · Einkommen +${balloonData.income}/s`);
+
 }
 
 function updateSentBalloons(side, deltaTime) {
@@ -550,7 +408,6 @@ function startNextRound() {
   gameState.intermissionRemaining = 0;
   gameState.roundStatus = 'spawning';
   buyAITower();
-  showToast(`Runde ${gameState.currentRound} gestartet: ${formatRound(definition)}.`);
   updateUI();
 }
 
@@ -602,7 +459,7 @@ function finishRound() {
   }
   gameState.roundStatus = 'intermission';
   gameState.intermissionRemaining = CONFIG.INTERMISSION_SECONDS;
-  showToast(`Runde ${gameState.currentRound} geschafft.`);
+  showToast(`Welle ${gameState.currentRound} geschafft!`);
 }
 
 function updateRound(deltaTime) {
@@ -661,11 +518,11 @@ function updateGame(deltaTime) {
     updateUI();
   }
 
-  updateSide(gameState.player, true, deltaTime);
-  updateSide(gameState.enemy, false, deltaTime);
+  updateSide(gameState.player, deltaTime);
+  updateSide(gameState.enemy, deltaTime);
 }
 
-function updateSide(side, isPlayer, deltaTime) {
+function updateSide(side, deltaTime) {
   for (let index = side.balloons.length - 1; index >= 0; index -= 1) {
     const balloon = side.balloons[index];
     const target = balloon.path[balloon.pathIndex + 1];
@@ -771,171 +628,6 @@ function endGame(title, message) {
   document.getElementById('btn-return-lobby').focus();
 }
 
-function prepareContext(ctx) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  ctx.imageSmoothingEnabled = false;
-  ctx.setTransform(CONFIG.RENDER_SCALE, 0, 0, CONFIG.RENDER_SCALE, 0, 0);
-}
-
-function renderSide(ctx, side, isPlayerSide) {
-  prepareContext(ctx);
-
-  if (side.map.image.complete && side.map.image.naturalWidth > 0) {
-    ctx.drawImage(
-      side.map.image,
-      0,
-      side.map.hudCrop,
-      side.map.image.naturalWidth,
-      side.map.image.naturalHeight - side.map.hudCrop,
-      0,
-      0,
-      CONFIG.CANVAS_WIDTH,
-      CONFIG.CANVAS_HEIGHT
-    );
-  } else {
-    ctx.fillStyle = '#222831';
-    ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
-  }
-
-  if (isPlayerSide && gameState.selectedTowerType) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(143, 242, 194, 0.75)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([2, 2]);
-    buildZonesForMap(side.map).forEach((zone) => ctx.strokeRect(zone.x, zone.y, zone.w, zone.h));
-    ctx.restore();
-  }
-
-  side.towers.forEach((tower) => drawTower(ctx, tower));
-
-  side.projectiles.forEach((projectile) => {
-    ctx.strokeStyle = projectile.color;
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(projectile.x, projectile.y);
-    ctx.lineTo(projectile.targetX, projectile.targetY);
-    ctx.stroke();
-  });
-
-  side.balloons.forEach((balloon) => {
-    if (balloon.type === 'boss') drawBossSprite(ctx, balloon.x, balloon.y, balloon.renderSize);
-    else drawBalloonSprite(ctx, balloon.type, 0, balloon.x, balloon.y, balloon.renderSize);
-  });
-
-  side.pops.forEach((pop) => {
-    const progress = pop.age / pop.duration;
-    const count = ASSETS.balloons[pop.type].length;
-    const frame = Math.min(count - 1, 1 + Math.floor(progress * (count - 1)));
-    drawBalloonSprite(ctx, pop.type, frame, pop.x, pop.y, pop.size);
-  });
-
-  if (isPlayerSide && gameState.selectedTowerType && mousePos.onCanvas) {
-    renderBuildPreview(ctx);
-  }
-  if (isPlayerSide && gameState.selectedTowerType && gameState.buildCursor.active) renderKeyboardBuildCursor(ctx);
-}
-
-function drawBossSprite(ctx, x, y, size) {
-  const image = ASSETS.boss;
-  if (!image.naturalWidth) return;
-  const ratio = image.naturalWidth / image.naturalHeight;
-  ctx.drawImage(image, x - (size * ratio) / 2, y - size / 2, size * ratio, size);
-}
-
-function drawBalloonSprite(ctx, type, frame, x, y, size) {
-  const frames = ASSETS.balloons[type];
-  if (!frames) return;
-  const image = frames[frame];
-  // All phases use the intact balloon's scale, so fragments never grow to fill a cell.
-  const scale = size / frames[0].naturalHeight;
-  const width = image.naturalWidth * scale;
-  const height = image.naturalHeight * scale;
-  ctx.drawImage(image, x - width / 2, y - size / 2, width, height);
-}
-
-function drawTower(ctx, tower, alpha = 1) {
-  const frames = ASSETS.characters[tower.type];
-  const image = frames[tower.frameIndex] || frames[0];
-  const imageWidth = image.naturalWidth || image.width;
-  const imageHeight = image.naturalHeight || image.height;
-  if (!imageWidth || !imageHeight) return;
-  const renderHeight = CONFIG.CHARACTER_RENDER.HEIGHT;
-  const renderWidth = Math.min(
-    CONFIG.CHARACTER_RENDER.MAX_WIDTH,
-    renderHeight * (imageWidth / imageHeight)
-  );
-
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.drawImage(
-    image,
-    tower.x - renderWidth / 2,
-    tower.y - renderHeight / 2 - 4,
-    renderWidth,
-    renderHeight
-  );
-  ctx.restore();
-}
-
-function renderBuildPreview(ctx) {
-  const type = gameState.selectedTowerType;
-  const towerData = CONFIG.TOWERS[type];
-  const allowed = canBuildAt(gameState.player, type, mousePos.x, mousePos.y) === true;
-  ctx.strokeStyle = allowed ? 'rgba(143, 242, 194, 0.95)' : 'rgba(239, 102, 107, 0.95)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.arc(mousePos.x, mousePos.y, towerData.range, 0, Math.PI * 2);
-  ctx.stroke();
-  drawTower(ctx, { type, frameIndex: 0, x: mousePos.x, y: mousePos.y }, 0.58);
-}
-
-function renderKeyboardBuildCursor(ctx) {
-  const { x, y } = gameState.buildCursor;
-  const type = gameState.selectedTowerType;
-  const allowed = canBuildAt(gameState.player, type, x, y) === true;
-  ctx.save();
-  ctx.strokeStyle = allowed ? '#8ff2c2' : '#ef666b';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x - 6, y - 6, 12, 12);
-  ctx.restore();
-  drawTower(ctx, { type, frameIndex: 0, x, y }, 0.7);
-}
-
-function renderTowerPortraits() {
-  document.querySelectorAll('[data-portrait]').forEach((canvas) => {
-    const type = canvas.dataset.portrait;
-    const image = ASSETS.characters[type][0];
-    const imageWidth = image.naturalWidth || image.width;
-    const imageHeight = image.naturalHeight || image.height;
-    if (!imageWidth || !imageHeight) return;
-
-    const ctx = canvas.getContext('2d');
-    const scale = Math.min(canvas.width / imageWidth, canvas.height / imageHeight);
-    const width = imageWidth * scale;
-    const height = imageHeight * scale;
-
-    ctx.imageSmoothingEnabled = false;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(
-      image,
-      (canvas.width - width) / 2,
-      (canvas.height - height) / 2,
-      width,
-      height
-    );
-  });
-}
-
-function renderBalloonPortraits() {
-  document.querySelectorAll('[data-balloon-portrait]').forEach((canvas) => {
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBalloonSprite(ctx, canvas.dataset.balloonPortrait, 0,
-      canvas.width / 2, canvas.height / 2, canvas.height - 4);
-  });
-}
 function formatRound(definition) {
   const names = { red: 'rote', blue: 'blaue', green: 'grüne', yellow: 'gelbe', boss: 'Boss' };
   return definition.groups.map((group) => `${group.count} ${names[group.type]}${group.type === 'boss' && group.count !== 1 ? 'e' : ''}`).join(' · ');
@@ -997,11 +689,11 @@ function showToast(message) {
   ui.toast.textContent = message;
   ui.toast.classList.add('active');
   window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => ui.toast.classList.remove('active'), 2100);
+  toastTimer = window.setTimeout(() => {
+    ui.toast.classList.remove('active');
+    ui.toast.textContent = '';
+  }, 3000);
 }
-
-// The homepage links directly to this separate game page.
-startGame();
 
 function togglePause() {
   if (!gameState.active) return;
@@ -1013,5 +705,5 @@ function togglePause() {
   if (!gameState.paused) animationFrameId = requestAnimationFrame(gameLoop);
 }
 
-document.getElementById('btn-pause').addEventListener('click', togglePause);
-document.getElementById('btn-back-menu').addEventListener('click', returnToHomepage);
+// Nach dem Registrieren aller Eingaben die Spielansicht laden.
+startGame();
