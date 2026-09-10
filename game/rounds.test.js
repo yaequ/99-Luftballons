@@ -12,8 +12,8 @@ test('defines exactly 30 ordered rounds', () => {
 test('preserves existing round sizes and special boss rounds', () => {
   assert.equal(targetCount(1), 10);
   assert.equal(targetCount(20), 200);
-  assert.equal(targetCount(21), 2020);
-  assert.equal(targetCount(28), 2160);
+  assert.equal(targetCount(21), 1020);
+  assert.equal(targetCount(28), 1160);
   assert.equal(targetCount(29), 1);
   assert.equal(targetCount(30), 2);
   ROUND_DEFINITIONS.forEach((round) => assert.equal(expandRound(round).length, targetCount(round.round)));

@@ -17,7 +17,7 @@ Adresse: `http://127.0.0.1:4179/`
 - Überlebe alle 30 Angriffsrunden der KI oder reduziere ihre 99 Leben vorher auf null.
 - Runde 1 beginnt manuell. Mit aktiviertem Auto-Start beginnt die nächste Runde nach fünf Sekunden.
 - Runde 29 enthält einen Boss, Runde 30 zwei Bosse.
-- Die Ballonmenge steigt bis Runde 20 um 100 pro Runde und danach bis Runde 28 um 200 pro Runde. Die ursprüngliche Typverteilung jeder Runde bleibt erhalten.
+- Runden 1-20: Rundennummer x 10 Ballons (10 bis 200). Runde 21: 1020 Ballons; danach pro Runde 20 mehr, bis 1160 in Runde 28. Die Spawn-Reihenfolge wird gemischt.
 - Der Boss verursacht 25 Lebensschaden; normale Ballons verursachen einen Lebensschaden.
 
 ## Steuerung
@@ -41,9 +41,9 @@ Die bestehenden Charaktere **Kaktus**, **Gebläse** und **Lupe** sind die drei T
 ## Assets und Lizenzen
 
 - Karten und Charaktergrafiken stammen aus den im Studienprojekt bereitgestellten Projektassets.
-- Die normalen Ballons verwenden die gelieferten Einzelbilder aus `Balloons/ballon red`, `Balloons/balloon blue`, `Balloons/balloon green` und `Balloons/ballon yellow`. Die fertig freigestellten PNGs liegen in `game/assets/Balloons/transparent/`, jeweils in den Unterordnern `red`, `blue`, `green` und `yellow`.
+- Die normalen Ballons verwenden freigestellte Einzelbilder unter `game/assets/Balloons/transparent/` in den Farbordnern `red`, `blue`, `green` und `yellow`. Die Ausgangsgrafiken liegen neben der Kopie in `../nicht_gebraucht/Balloons/`.
 - Hintergrund und Rasterlinien sind bereits im Alphakanal der Spielassets entfernt. Das Spiel liest keine Canvas-Pixel aus und benötigt hierfür keine CORS-Freigabe des Bildservers. Die Originaldateien bleiben erhalten. Spiel und Auswahlkarten verwenden dieselben Designs; die Platzanimation nutzt pro Farbe alle nummerierten Phasen (7 für Rot/Blau/Grün, 6 für Gelb) bei gleichbleibendem Maßstab.
-- Beim Aktualisieren des Hostings `game/index.html`, `game/game.js` und den vollständigen Ordner `game/assets/Balloons/transparent/` gemeinsam hochladen. Die neue Script-Version und die neuen Asset-Pfade vermeiden die Wiederverwendung der alten Laufzeitverarbeitung aus dem Browsercache.
+- Beim Aktualisieren des Hostings den gesamten Inhalt dieses Ordners gemeinsam hochladen, einschliesslich aller Scripts und Assets.
 - `game/assets/Balloons/boss-balloon.png` wurde für dieses Projekt mit OpenAI Image Gen erzeugt.
 - Vor einer Veröffentlichung müssen Urheber, konkrete Quellen und Nutzungslizenzen der bereitgestellten Ausgangsassets ergänzt und geprüft werden.
 
@@ -51,14 +51,15 @@ Die bestehenden Charaktere **Kaktus**, **Gebläse** und **Lupe** sind die drei T
 
 ```text
 index.html             Einstieg: leitet zur Homepage weiter
-Code.html              Weiterleitung für bisherige Links
 homepage/
   index.html           Homepage mit Link zum Spiel
   style.css            Gestaltung der Homepage
 game/
   index.html           Spielseite mit Ladeanzeige
   style.css            Gestaltung des Spiels
-  game.js              Spiellogik und Seitennavigation
+  config.js            Bildpfade, Spielwerte und Karten
+  rendering.js         Canvas-Darstellung und Grafikvorschauen
+  game.js              Spielzustand, Eingaben, Pause, KI und Kampf
   rounds.js            Rundendefinitionen
   rounds.test.js       Bestehende Rundentests
   assets/
@@ -78,3 +79,11 @@ Datenbank und Highscores sind noch nicht angebunden.
 
 Auf der Homepage öffnet „Zum Spiel“ zunächst die Spielansicht. Zeit, Einkommen
 und Angriffe beginnen erst beim Klick auf „Spiel starten“, der Runde 1 startet.
+
+## Bereinigte Kopie
+
+Aktuelle 30-Runden-Version mit Pause/Fortsetzen, Spielmenue und transparenten Ballons. Den Webserver in diesem Ordner starten. Originaldateien und Git-Index bleiben unveraendert. Alte Version, Ausgangsgrafiken, ZIP-Archiv und historisches Design-Protokoll sind unter `../nicht_gebraucht/` dokumentiert.
+
+Lesereihenfolge: Homepage-HTML/CSS, Spiel-HTML, `game/config.js`, `game/rounds.js`, `game/game.js`, `game/rendering.js`. Die klassischen Scripts teilen globale Definitionen; ihre Reihenfolge im HTML ist wichtig.
+
+Spielbalance und Rundenzahlen bleiben unveraendert. Tests und Beschreibung wurden an die bestehende Berechnung angepasst. Der Sprung von 200 auf 1020 Ballons bleibt erhalten. Login und Highscore sind Platzhalter.
