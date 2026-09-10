@@ -1,0 +1,255 @@
+:root {
+    color-scheme: light;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #172033;
+    background: #f4f6fb;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+}
+
+a {
+    color: #3157c8;
+}
+
+.auth-page,
+.menu-page {
+    background: linear-gradient(145deg, #eef3ff, #fff5f6);
+}
+
+.auth-page {
+    display: grid;
+    place-items: center;
+    padding: 2rem 1rem;
+}
+
+.auth-card,
+.menu-card {
+    width: min(100%, 32rem);
+    padding: 2rem;
+    border: 1px solid #dfe4ef;
+    border-radius: 1rem;
+    background: #ffffff;
+    box-shadow: 0 1rem 2.5rem rgba(35, 47, 82, 0.1);
+}
+
+h1 {
+    margin-top: 0;
+}
+
+form {
+    display: grid;
+    gap: 0.75rem;
+}
+
+label {
+    margin-top: 0.35rem;
+    font-weight: 650;
+}
+
+input {
+    width: 100%;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid #b9c2d4;
+    border-radius: 0.55rem;
+    font: inherit;
+}
+
+input:focus {
+    border-color: #3157c8;
+    outline: 3px solid rgba(49, 87, 200, 0.15);
+}
+
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-right: 3rem;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.45rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 0.4rem;
+    background: transparent;
+    cursor: pointer;
+}
+
+.primary-button,
+.primary-link,
+.secondary-link {
+    display: inline-block;
+    padding: 0.8rem 1.1rem;
+    border: 0;
+    border-radius: 0.55rem;
+    font: inherit;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.primary-button,
+.primary-link {
+    margin-top: 0.75rem;
+    color: #ffffff;
+    background: #3157c8;
+}
+
+.primary-button:hover,
+.primary-link:hover {
+    background: #2545a3;
+}
+
+.secondary-link {
+    color: #27334e;
+    background: #e7ebf4;
+}
+
+.message {
+    margin: 1rem 0;
+    padding: 0.8rem 1rem;
+    border-radius: 0.55rem;
+}
+
+.message ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.message.error {
+    color: #851f2a;
+    background: #ffe8eb;
+}
+
+.message.success {
+    color: #165c39;
+    background: #e3f7ed;
+}
+
+.development-note,
+.auth-link {
+    color: #647087;
+    font-size: 0.9rem;
+}
+
+.auth-link {
+    margin: 1.25rem 0 0;
+    text-align: center;
+}
+
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem clamp(1rem, 4vw, 3rem);
+    background: #ffffff;
+    box-shadow: 0 0.2rem 1rem rgba(35, 47, 82, 0.08);
+}
+
+.site-header .brand {
+    color: #172033;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.site-header nav {
+    display: flex;
+    gap: 1rem;
+}
+
+.menu-card {
+    margin: clamp(3rem, 10vh, 7rem) auto;
+    text-align: center;
+}
+
+.eyebrow {
+    margin-bottom: 0.5rem;
+    color: #d24655;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.leaderboard-card {
+    width: min(100% - 2rem, 44rem);
+}
+
+.leaderboard-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+}
+
+.leaderboard-tabs a {
+    padding: 0.55rem 0.8rem;
+    border-radius: 0.5rem;
+    color: #27334e;
+    background: #e7ebf4;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.leaderboard-tabs a.active {
+    color: #ffffff;
+    background: #3157c8;
+}
+
+.leaderboard-table-wrapper {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #dfe4ef;
+}
+
+.leaderboard-table th {
+    color: #647087;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 34rem) {
+    .auth-card,
+    .menu-card {
+        padding: 1.4rem;
+    }
+
+    .site-header {
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .site-header nav {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .leaderboard-tabs {
+        flex-wrap: wrap;
+    }
+}
