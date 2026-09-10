@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111317">
+  <title>99 Luftballons – KI-Duell</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css?v=sidebar-menu-2">
+</head>
+<body>
+  <div id="game-app">
+    <section id="screen-lobby" class="screen active" aria-labelledby="game-title">
+      <div class="lobby-backdrop" aria-hidden="true"></div>
+      <div class="lobby-shell pixel-frame">
+        <p class="eyebrow">Pixel Tower Defense</p>
+        <h1 id="game-title">99 LUFTBALLONS</h1>
+        <p class="lobby-copy">Spiel wird geladen …</p>
+        <p id="lobby-status" class="status-message" aria-live="polite">Grafiken werden geladen.</p>
+      </div>
+    </section>
+
+    <section id="screen-game" class="screen" aria-label="Laufendes KI-Duell">
+        <nav class="game-navigation" aria-label="Spielmenü">
+          <button class="pixel-btn" id="btn-pause" type="button" disabled aria-pressed="false">Pausieren</button>
+          <span id="pause-status" role="status"></span>
+          <details class="home-menu pixel-frame" id="game-menu">
+            <summary>Menü</summary>
+            <div class="home-menu__buttons">
+              <button class="pixel-btn" type="button">Login</button>
+              <button class="pixel-btn" type="button">Highscore</button>
+              <button class="pixel-btn" type="button">xxx</button>
+              <button class="pixel-btn" id="btn-back-menu" type="button">back to menu</button>
+            </div>
+          </details>
+        </nav>
+      <div class="game-frame pixel-frame">
+        <header id="game-hud" class="hud">
+          <div class="brand-mini">99 <span>LUFTBALLONS</span></div>
+          <div class="hud__round"><span>Runde</span><strong id="wave-counter">0/30</strong><small id="round-state">Bereit</small></div>
+          <div class="hud__time"><span>Zeit</span><strong id="match-timer">00:00</strong></div>
+          <div class="hud__economy">
+            <span class="hud__metric hud__metric--player"><span>Du</span><strong id="p1-hp">99 HP</strong></span>
+            <span class="hud__metric hud__metric--gold"><span>Gold</span><strong id="p1-gold">100</strong></span>
+            <span class="hud__versus">VS</span>
+            <span class="hud__metric hud__metric--enemy"><span>KI</span><strong id="p2-hp">99 HP</strong></span>
+            <span class="hud__metric"><span>KI-Gold</span><strong id="p2-gold">100</strong></span>
+          </div>
+        </header>
+
+        <div class="round-toolbar" aria-label="Rundensteuerung">
+          <div class="round-summary"><span>Verbleibend</span><strong id="remaining-enemies">0</strong></div>
+          <div class="round-summary round-summary--wide"><span>Nächste Runde</span><strong id="next-wave-preview">100 rote Ballons</strong><small id="round-countdown">Warte auf Start</small></div>
+          <button id="btn-start-round" class="pixel-btn pixel-btn--round" type="button">Spiel starten</button>
+          <label class="auto-start-control"><input id="input-auto-start" type="checkbox" checked><span>Auto-Start</span></label>
+          <button id="btn-toggle-controls" class="view-btn control-toggle" type="button" aria-expanded="true" aria-controls="game-controls">Interface ausblenden</button>
+        </div>
+
+        <main class="maps-grid" id="maps-grid">
+          <section class="map-panel map-panel--player" aria-labelledby="player-map-title">
+            <header class="map-panel__header"><div><span>Deine Karte</span><strong id="player-map-title">Frostpfad</strong></div><div class="income-readout"><span>Einkommen</span><strong id="p1-income">+10/s</strong></div></header>
+            <div class="map-stage" id="player-map-stage">
+              <canvas id="canvas-player" class="game-canvas" width="960" height="720" tabindex="0" aria-label="Deine Verteidigungskarte. Turm wählen, mit Pfeiltasten Bauposition bewegen und mit Enter platzieren." aria-describedby="keyboard-help"></canvas>
+              <div class="sr-only" id="map-tip" aria-live="polite"><span class="map-tip__step">1</span><span>Turm wählen und auf einer dunklen Baufläche platzieren.</span></div>
+            </div>
+          </section>
+          <section class="map-panel map-panel--enemy" aria-labelledby="enemy-map-title">
+            <header class="map-panel__header"><div><span>KI-Karte</span><strong id="enemy-map-title">Waldweg</strong></div><span class="map-panel__readonly">Beobachten</span></header>
+            <div class="map-stage"><canvas id="canvas-enemy" class="game-canvas" width="960" height="720" aria-label="Verteidigungskarte der KI"></canvas></div>
+          </section>
+          <p id="keyboard-help" class="sr-only">Nach der Turmauswahl bewegt man den Baucursor mit den Pfeiltasten. Enter platziert den Turm, Escape bricht ab.</p>
+          <div id="game-toast" class="game-toast" role="status" aria-live="polite"></div>
+        </main>
+
+        <footer id="game-controls" class="control-dock">
+          <section class="control-panel" aria-labelledby="tower-panel-title">
+            <div class="panel-heading"><div><span class="panel-kicker">Verteidigung</span><h2 id="tower-panel-title">Turm auswählen</h2></div><span class="panel-hint">Danach Baufläche anklicken oder Tastatur verwenden</span></div>
+            <div class="action-grid action-grid--towers">
+              <button class="action-card build-btn" data-tower="cactus" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__name">Kaktus</span><span class="action-card__meta">Schneller Schaden</span><span class="action-card__cost">25 G</span></button>
+              <button class="action-card build-btn" data-tower="fan" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__name">Gebläse</span><span class="action-card__meta">Kurze Abklingzeit</span><span class="action-card__cost">45 G</span></button>
+              <button class="action-card build-btn" data-tower="lens" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__name">Lupe</span><span class="action-card__meta">Hoher Schaden</span><span class="action-card__cost">70 G</span></button>
+            </div>
+          </section>
+          <section class="control-panel control-panel--attacks" aria-labelledby="attack-panel-title">
+            <div class="panel-heading"><div><span class="panel-kicker">Angriff</span><h2 id="attack-panel-title">Ballons senden</h2></div></div>
+            <div class="action-grid action-grid--balloons">
+              <button class="balloon-card send-btn balloon-card--red" data-balloon="red" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="red" width="64" height="64" aria-hidden="true"></canvas><span><strong>Rot</strong><small>10 G · +1/s</small></span></button>
+              <button class="balloon-card send-btn balloon-card--blue" data-balloon="blue" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="blue" width="64" height="64" aria-hidden="true"></canvas><span><strong>Blau</strong><small>25 G · +2/s</small></span></button>
+              <button class="balloon-card send-btn balloon-card--green" data-balloon="green" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="green" width="64" height="64" aria-hidden="true"></canvas><span><strong>Grün</strong><small>45 G · +4/s</small></span></button>
+              <button class="balloon-card send-btn balloon-card--yellow" data-balloon="yellow" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="yellow" width="64" height="64" aria-hidden="true"></canvas><span><strong>Gelb</strong><small>70 G · +7/s</small></span></button>
+            </div>
+          </section>
+        </footer>
+      </div>
+    </section>
+
+    <div id="modal-gameover" class="modal" role="dialog" aria-modal="true" aria-labelledby="gameover-title"><div class="modal-content pixel-frame"><p class="eyebrow">Match beendet</p><h2 id="gameover-title">Sieg!</h2><p id="gameover-message"></p><button id="btn-return-lobby" class="pixel-btn pixel-btn--primary" type="button">Zur Homepage</button></div></div>
+    <div id="modal-load-error" class="modal" role="dialog" aria-modal="true" aria-labelledby="load-error-title"><div class="modal-content pixel-frame"><p class="eyebrow">Ladefehler</p><h2 id="load-error-title">Asset fehlt</h2><p id="load-error-message"></p><div class="modal-actions"><button id="btn-retry-load" class="pixel-btn pixel-btn--primary" type="button">Erneut versuchen</button><button id="btn-cancel-load" class="pixel-btn" type="button">Zur Homepage</button></div></div></div>
+  </div>
+  <script src="config.js?v=cleanup-1"></script>
+  <script src="rounds.js"></script>
+  <script src="rendering.js?v=cleanup-1"></script>
+  <script src="game.js?v=cleanup-1"></script>
+</body>
+</html>
