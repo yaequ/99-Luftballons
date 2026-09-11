@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__) . '/portal.php';
+require dirname(__DIR__) . '/account-security.php';
 function check(bool $ok, string $message): void {
     if (!$ok) throw new RuntimeException($message);
     echo "OK: $message\n";
@@ -53,7 +54,10 @@ check(substr_count($html, 'Deine Bestzeit') === 1, 'Personal best badge only for
 // Render real templates with representative data without using production credentials.
 $fixtures = [
     'index.php' => ['top'=>$board['entries'], 'rankingUnavailable'=>false, 'loggedIn'=>false],
-    'account.php' => ['player'=>['username'=>'<b>Test</b>', 'created_at'=>'2026-01-01'], 'stats'=>$stats, 'rank'=>$board['mine'], 'recent'=>$first, 'best'=>10, 'achievementCount'=>1, 'achievements'=>[
+    'account.php' => ['player'=>['username'=>'<b>Test</b>', 'created_at'=>'2026-01-01'], 'stats'=>$stats, 'rank'=>$board['mine'], 'recent'=>$first, 'best'=>10, 'avatarMessage'=>'', 'avatarError'=>'', 'selectedAvatar'=>'forest_guardian', 'selectedAvatarData'=>['name'=>'Waldwächter','image'=>'assets/img/avatars/avatar-forest-guardian.png'], 'avatarChoices'=>[
+        'forest_guardian'=>['name'=>'Waldwächter','image'=>'assets/img/avatars/avatar-forest-guardian.png'],
+        'frost_mage'=>['name'=>'Frostmagierin','image'=>'assets/img/avatars/avatar-frost-mage.png'],
+    ], 'achievementCount'=>1, 'achievements'=>[
         ['code'=>'first_match','name'=>'Feuerprobe','description'=>'Test','icon'=>'assets/img/achievements/achievement-first-match.png','unlocked_at'=>'2026-01-01 12:00:00','current'=>1,'target'=>1],
         ['code'=>'veteran','name'=>'Veteran','description'=>'Test','icon'=>'assets/img/achievements/achievement-veteran.png','unlocked_at'=>null,'current'=>3,'target'=>25],
     ]],

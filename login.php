@@ -5,6 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/auth.php';
 require __DIR__ . '/db.php';
 require __DIR__ . '/account-security.php';
+require __DIR__ . '/avatars.php';
 
 if (isset($_SESSION['user_id'])) {
     header('Location: menu.php');
@@ -39,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             session_regenerate_id(true);
             $_SESSION['user_id'] = (int) $user['id'];
+            $_SESSION['avatar_code'] = user_avatar_code($pdo, (int) $user['id']);
 
             header('Location: menu.php');
             exit;
@@ -52,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css?v=map-card-1">
+    <link rel="stylesheet" href="style.css?v=avatars-1">
     <script src="password-toggle.js" defer></script>
     <script src="theme.js?v=camp-1"></script>
 </head>

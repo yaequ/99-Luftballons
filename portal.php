@@ -22,7 +22,7 @@ function portal_head(string $title): void
 {
     echo '<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
     echo '<title>' . escape($title) . ' – 99 Luftballons</title>';
-    echo '<link rel="stylesheet" href="style.css?v=map-card-1"><script src="theme.js?v=camp-1"></script>';
+    echo '<link rel="stylesheet" href="style.css?v=avatars-1"><script src="theme.js?v=camp-1"></script>';
 }
 
 // Calendar boundaries use the database's date, matching stored match timestamps.
