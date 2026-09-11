@@ -5,6 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/auth.php';
 require_login();
 require __DIR__ . '/db.php';
+require __DIR__ . '/achievements.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -39,4 +40,12 @@ $statement = $pdo->prepare(
 );
 $statement->execute([$_SESSION['user_id'], $result, $duration, $roundReached]);
 
-echo json_encode(['success' => true]);
+$unlocked = [];
+try {
+    $unlocked = unlock_achievements($pdo, (int) $_SESSION['user_id'], (int) $pdo->lastInsertId());
+} catch (Throwable $error) {
+    // A saved match must never be lost because optional achievement processing failed.
+    error_log('Achievement processing failed: ' . get_class($error));
+}
+
+echo json_encode(['success' => true, 'achievements' => $unlocked]);

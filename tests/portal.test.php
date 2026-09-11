@@ -53,7 +53,10 @@ check(substr_count($html, 'Deine Bestzeit') === 1, 'Personal best badge only for
 // Render real templates with representative data without using production credentials.
 $fixtures = [
     'index.php' => ['top'=>$board['entries'], 'rankingUnavailable'=>false, 'loggedIn'=>false],
-    'account.php' => ['player'=>['username'=>'<b>Test</b>', 'created_at'=>'2026-01-01'], 'stats'=>$stats, 'rank'=>$board['mine'], 'recent'=>$first, 'best'=>10],
+    'account.php' => ['player'=>['username'=>'<b>Test</b>', 'created_at'=>'2026-01-01'], 'stats'=>$stats, 'rank'=>$board['mine'], 'recent'=>$first, 'best'=>10, 'achievementCount'=>1, 'achievements'=>[
+        ['code'=>'first_match','name'=>'Feuerprobe','description'=>'Test','icon'=>'assets/img/achievements/achievement-first-match.png','unlocked_at'=>'2026-01-01 12:00:00','current'=>1,'target'=>1],
+        ['code'=>'veteran','name'=>'Veteran','description'=>'Test','icon'=>'assets/img/achievements/achievement-veteran.png','unlocked_at'=>null,'current'=>3,'target'=>25],
+    ]],
     'history.php' => ['filter'=>'all', 'history'=>$first, 'best'=>10],
     'leaderboard.php' => ['sort'=>'fastest', 'period'=>'all', 'userId'=>15, 'board'=>$board, 'entries'=>$board['entries'], 'mine'=>$board['mine']],
     'instructions.php' => [],

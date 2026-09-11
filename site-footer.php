@@ -4,8 +4,7 @@ $footerPage = basename($_SERVER['SCRIPT_NAME'] ?? '');
 <footer class="site-footer">
     <div class="site-footer-inner">
         <a class="footer-brand" href="index.php">
-            <span class="brand-balloons footer-balloons" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span><strong>99 Luftballons</strong><small>Ein Webprojekt mit Rückenwind.</small></span>
+            <img class="footer-logo" src="assets/img/branding/logo.png" alt="99 Luftballons" width="1024" height="512" loading="lazy">
         </a>
         <nav aria-label="Rechtliche Informationen">
             <a href="imprint.php"<?= $footerPage === 'imprint.php' ? ' aria-current="page"' : '' ?>>Impressum</a>

@@ -34,3 +34,25 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     INDEX idx_auth_tokens_lookup (purpose, token_hash, used_at, expires_at),
     INDEX idx_auth_tokens_rate (user_id, purpose, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS achievements (
+    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(40) NOT NULL UNIQUE,
+    name VARCHAR(80) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    icon_path VARCHAR(255) NOT NULL,
+    sort_order TINYINT UNSIGNED NOT NULL,
+    INDEX idx_achievements_order (sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_achievements (
+    user_id INT UNSIGNED NOT NULL,
+    achievement_id SMALLINT UNSIGNED NOT NULL,
+    source_result_id BIGINT UNSIGNED DEFAULT NULL,
+    unlocked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, achievement_id),
+    CONSTRAINT fk_user_achievements_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_achievements_achievement FOREIGN KEY (achievement_id) REFERENCES achievements(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_achievements_result FOREIGN KEY (source_result_id) REFERENCES game_results(id) ON DELETE SET NULL,
+    INDEX idx_user_achievements_unlocked (unlocked_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -9,8 +9,7 @@ $headerLinks = $headerLoggedIn
 <a class="skip-link" href="#main-content">Zum Inhalt</a>
 <header class="site-header">
     <a class="brand" href="index.php" aria-label="99 Luftballons – Startseite">
-        <span class="brand-balloons" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span><strong>99 Luftballons</strong><small>Ein kleines Stück Abenteuer.</small></span>
+        <img class="brand-logo" src="assets/img/branding/logo.png" alt="99 Luftballons" width="1024" height="512">
     </a>
     <nav aria-label="Hauptnavigation">
         <?php foreach ($headerLinks as $href => $label): ?>
