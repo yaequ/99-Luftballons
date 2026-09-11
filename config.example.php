@@ -11,4 +11,13 @@ return [
         'username' => 'dbu5136014',
         'password' => 'IONOS_DATENBANKPASSWORT',
     ],
+    'mail' => [
+        'host' => 'smtp.ionos.de',
+        'port' => 465,
+        'encryption' => 'ssl',
+        'username' => 'noreply@luftballons.k4d-entertainment.com',
+        'password' => 'IONOS_POSTFACH_PASSWORT',
+        'from_address' => 'noreply@luftballons.k4d-entertainment.com',
+        'from_name' => '99 Luftballons',
+    ],
 ];

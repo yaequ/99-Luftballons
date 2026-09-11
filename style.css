@@ -138,6 +138,7 @@ form > .primary-button { margin-top: .8rem; width: 100%; }
 .password-toggle:hover { background: var(--soft); }
 .auth-link { font-size: .8rem; color: var(--muted); text-align: center; margin: 1.65rem 0 0; }
 .auth-link a { font-weight: 800; }
+.auth-link-tight { margin-top: 1rem; }
 .message { padding: 1rem; margin: 1.2rem 0; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); font-size: .9rem; overflow-wrap: anywhere; }
 .message p { margin: 0; }
 .message p + p { margin-top: .75rem; }

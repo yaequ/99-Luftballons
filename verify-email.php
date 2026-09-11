@@ -3,21 +3,21 @@
 declare(strict_types=1);
 
 require __DIR__ . '/db.php';
+require __DIR__ . '/account-security.php';
 
 $verified = false;
 $message = 'Der Bestätigungslink ist ungültig oder wurde bereits verwendet.';
 $token = $_GET['token'] ?? '';
 
 if (is_string($token) && strlen($token) === 64 && ctype_xdigit($token)) {
-    $statement = $pdo->prepare(
-        'UPDATE users
-         SET email_verified_at = NOW(), verification_token = NULL
-         WHERE verification_token = ? AND email_verified_at IS NULL'
-    );
-    $statement->execute([$token]);
-
-    if ($statement->rowCount() === 1) {
-        $verified = true;
+    $verified = consume_email_verification($pdo, $token);
+    // Previously issued links remain usable while new links use hashed, expiring tokens.
+    if (!$verified) {
+        $statement = $pdo->prepare('UPDATE users SET email_verified_at = CURRENT_TIMESTAMP, verification_token = NULL WHERE verification_token = ? AND email_verified_at IS NULL');
+        $statement->execute([$token]);
+        $verified = $statement->rowCount() === 1;
+    }
+    if ($verified) {
         $message = 'Deine E-Mail-Adresse wurde erfolgreich bestätigt. Du kannst dich jetzt anmelden.';
     }
 }
@@ -28,7 +28,7 @@ if (is_string($token) && strlen($token) === 64 && ctype_xdigit($token)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Mail bestätigen – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css?v=legal-1">
+    <link rel="stylesheet" href="style.css?v=auth-mail-1">
     <script src="theme.js?v=camp-1"></script>
 </head>
 <body class="auth-page">

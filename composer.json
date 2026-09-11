@@ -1,0 +1,14 @@
+{
+    "name": "k4d-entertainment/99-luftballons",
+    "description": "Web portal for the 99 Luftballons tower-defense project",
+    "license": "proprietary",
+    "require": {
+        "phpmailer/phpmailer": "^7.0"
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2.0"
+        }
+    }
+}

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/db.php';
+require __DIR__ . '/account-security.php';
+require __DIR__ . '/mailer.php';
 
 if (isset($_SESSION['user_id'])) {
     header('Location: menu.php');
@@ -13,13 +15,18 @@ if (isset($_SESSION['user_id'])) {
 $errors = [];
 $username = '';
 $email = '';
-$verificationLink = '';
+$registered = false;
+$mailSent = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
     $passwordConfirmation = $_POST['password_confirmation'] ?? '';
+
+    if (!valid_csrf($_POST)) {
+        $errors[] = 'Die Anfrage ist abgelaufen. Bitte versuche es erneut.';
+    }
 
     if ($username === '') {
         $errors[] = 'Bitte gib einen Benutzernamen ein.';
@@ -65,18 +72,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($errors === []) {
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-        $verificationToken = bin2hex(random_bytes(32));
-
         try {
             $statement = $pdo->prepare(
                 'INSERT INTO users
                     (username, email, password_hash, verification_token, email_verified_at)
-                 VALUES (?, ?, ?, ?, NULL)'
+                 VALUES (?, ?, ?, NULL, NULL)'
             );
-            $statement->execute([$username, $email, $passwordHash, $verificationToken]);
-
-            $appUrl = rtrim($config['app_url'], '/');
-            $verificationLink = $appUrl . '/verify-email.php?token=' . urlencode($verificationToken);
+            $statement->execute([$username, $email, $passwordHash]);
+            $registered = true;
+            $token = issue_auth_token($pdo, (int) $pdo->lastInsertId(), 'verify_email', 86400);
+            $verificationLink = rtrim((string) $config['app_url'], '/') . '/verify-email.php?token=' . urlencode((string) $token);
+            try {
+                send_app_mail($config, $email, $username, 'E-Mail-Adresse bestätigen', mail_layout('E-Mail-Adresse bestätigen', 'Bestätige deine E-Mail-Adresse, um dein Basislager freizuschalten. Der Link ist 24 Stunden gültig.', 'E-Mail bestätigen', $verificationLink), "E-Mail-Adresse bestätigen (24 Stunden gültig):\n$verificationLink");
+                $mailSent = true;
+            } catch (Throwable $mailError) {
+                error_log('Registration verification mail failed: ' . get_class($mailError));
+            }
         } catch (PDOException $exception) {
             if ($exception->getCode() === '23000') {
                 $errors[] = 'Benutzername oder E-Mail-Adresse sind bereits vergeben.';
@@ -93,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrieren – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css?v=legal-1">
+    <link rel="stylesheet" href="style.css?v=auth-mail-1">
     <script src="password-toggle.js" defer></script>
     <script src="theme.js?v=camp-1"></script>
 </head>
@@ -104,12 +115,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1>Komm ins Team.</h1>
         <p class="card-intro">Erstelle deinen Account und spiel mit.</p>
 
-        <?php if ($verificationLink !== ''): ?>
-            <div class="message success">
-                <p>Dein Account wurde erstellt. Bestätige jetzt deine E-Mail-Adresse:</p>
-                <p><a href="<?= htmlspecialchars($verificationLink, ENT_QUOTES, 'UTF-8') ?>">E-Mail-Adresse bestätigen</a></p>
-                <p class="development-note">Dieser Link wird nur für den Entwicklungsstand direkt angezeigt.</p>
+        <?php if ($registered): ?>
+            <div class="message <?= $mailSent ? 'success' : 'error' ?>">
+                <?php if ($mailSent): ?><p>Dein Account wurde erstellt. Wir haben dir einen Bestätigungslink per E-Mail geschickt. Bitte prüfe auch deinen Spam-Ordner.</p>
+                <?php else: ?><p>Dein Account wurde erstellt, aber die E-Mail konnte gerade nicht versendet werden. Fordere bitte einen neuen Bestätigungslink an.</p><?php endif; ?>
             </div>
+            <a class="primary-link" href="<?= $mailSent ? 'login.php' : 'resend-verification.php' ?>"><?= $mailSent ? 'Zum Login' : 'Link erneut anfordern' ?></a>
         <?php else: ?>
             <?php if ($errors !== []): ?>
                 <div class="message error" role="alert">
@@ -122,6 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="post" action="register.php">
+                <?= csrf_field() ?>
                 <label for="username">Benutzername</label>
                 <input
                     id="username"

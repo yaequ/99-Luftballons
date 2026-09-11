@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/db.php';
+require __DIR__ . '/account-security.php';
 
 if (isset($_SESSION['user_id'])) {
     header('Location: menu.php');
@@ -17,7 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $identifier = trim($_POST['identifier'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if ($identifier === '' || $password === '') {
+    if (!valid_csrf($_POST)) {
+        $error = 'Die Anfrage ist abgelaufen. Bitte versuche es erneut.';
+    } elseif ($identifier === '' || $password === '') {
         $error = 'Bitte fülle alle Felder aus.';
     } else {
         $statement = $pdo->prepare(
@@ -49,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css?v=legal-1">
+    <link rel="stylesheet" href="style.css?v=auth-mail-1">
     <script src="password-toggle.js" defer></script>
     <script src="theme.js?v=camp-1"></script>
 </head>
@@ -67,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="post" action="login.php">
+            <?= csrf_field() ?>
             <label for="identifier">Benutzername oder E-Mail-Adresse</label>
             <input
                 id="identifier"
@@ -86,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button class="primary-button" type="submit">Einloggen</button>
         </form>
 
+        <p class="auth-link auth-link-tight"><a href="forgot-password.php">Passwort vergessen?</a> · <a href="resend-verification.php">Bestätigung erneut senden</a></p>
         <p class="auth-link">Noch kein Account? <a href="register.php">Jetzt registrieren</a></p>
     </main>
     <?php require __DIR__ . '/site-footer.php'; ?>
