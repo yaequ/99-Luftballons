@@ -23,7 +23,7 @@ if ($user === false) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menü – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css?v=leaderboard-tabs-1">
+    <link rel="stylesheet" href="style.css?v=map-card-1">
     <script src="theme.js?v=camp-1"></script>
 </head>
 <body class="menu-page">
@@ -37,7 +37,7 @@ if ($user === false) {
         <p class="camp-footnote"><a href="account.php">Meine Statistiken</a> · <a href="instructions.php">Spielanleitung</a></p></div>
         <figure class="map-preview">
             <img src="game/assets/Maps/Grafik.webp" alt="Waldkarte mit kurvigen Wegen, Bauflächen und einer befestigten Basis" width="1024" height="765">
-            <figcaption><span class="map-caption-icon" aria-hidden="true">⌁</span><span><small>Ein Blick in die Spielwelt</small><strong>Zwischen Wald &amp; Abenteuer</strong></span></figcaption>
+            <figcaption><span class="map-caption-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3.5 6.5 5-2.5 7 2.5 5-2.5v13.5l-5 2.5-7-2.5-5 2.5Z"/><path d="M8.5 4v13.5m7-11V20"/></svg></span><span><small>Ein Blick in die Spielwelt</small><strong>Zwischen Wald &amp; Abenteuer</strong></span></figcaption>
         </figure>
     </main>
     <?php require __DIR__ . '/site-footer.php'; ?>

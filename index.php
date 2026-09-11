@@ -33,7 +33,7 @@ $loggedIn = isset($_SESSION['user_id']);
         </div>
         <figure class="map-preview">
             <img src="game/assets/Maps/Grafik.webp" alt="Waldkarte aus dem Spiel mit Bauflächen, Wegen und Basis" width="1024" height="765">
-            <figcaption><span class="map-caption-icon" aria-hidden="true">⌁</span><span><small>Entdecke die Spielwelt</small><strong>Ein Abenteuer zwischen Wald und Bergen</strong></span></figcaption>
+            <figcaption><span class="map-caption-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3.5 6.5 5-2.5 7 2.5 5-2.5v13.5l-5 2.5-7-2.5-5 2.5Z"/><path d="M8.5 4v13.5m7-11V20"/></svg></span><span><small>Entdecke die Spielwelt</small><strong>Ein Abenteuer zwischen Wald und Bergen</strong></span></figcaption>
         </figure>
     </section>
     <section class="portal-section" aria-labelledby="how-title">
