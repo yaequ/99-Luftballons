@@ -29,16 +29,13 @@ jobs:
             --exclude '.DS_Store' \
             ./ deploy/
 
-      - name: Upload to IONOS
-        uses: appleboy/scp-action@v1
+      - name: Upload to IONOS via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
-          host: ${{ secrets.SFTP_HOST }}
-          port: ${{ secrets.SFTP_PORT }}
           username: ${{ secrets.SFTP_USERNAME }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
           password: ${{ secrets.SFTP_PASSWORD }}
-          source: "deploy/,deploy/.htaccess"
-          target: ${{ secrets.SFTP_REMOTE_PATH }}
-          strip_components: 1
-          overwrite: true
-          timeout: 30s
-          command_timeout: 10m
+          local_path: './deploy/'
+          remote_path: ${{ secrets.SFTP_REMOTE_PATH }}
+          sftp_only: true
