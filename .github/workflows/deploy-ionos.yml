@@ -1,0 +1,44 @@
+name: Deploy to IONOS
+
+on:
+  push:
+    branches:
+      - Dev-Fullstack
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Upload website via SFTP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare deployment files
+        run: |
+          mkdir -p deploy
+          rsync -a --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'deploy/' \
+            --exclude 'config.local.php' \
+            --exclude '.DS_Store' \
+            ./ deploy/
+
+      - name: Upload to IONOS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          source: "deploy/,deploy/.htaccess"
+          target: ${{ secrets.SFTP_REMOTE_PATH }}
+          strip_components: 1
+          overwrite: true
+          timeout: 30s
+          command_timeout: 10m
