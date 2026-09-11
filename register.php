@@ -93,12 +93,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrieren – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=camp-1">
     <script src="password-toggle.js" defer></script>
+    <script src="theme.js?v=camp-1"></script>
 </head>
 <body class="auth-page">
-    <main class="auth-card">
-        <h1>Account erstellen</h1>
+    <?php require __DIR__ . '/site-header.php'; ?>
+    <main id="main-content" class="auth-card">
+        <p class="eyebrow">Dein Abenteuer beginnt</p>
+        <h1>Komm ins Team.</h1>
+        <p class="card-intro">Erstelle deinen Account und spiel mit.</p>
 
         <?php if ($verificationLink !== ''): ?>
             <div class="message success">

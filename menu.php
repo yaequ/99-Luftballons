@@ -23,23 +23,22 @@ if ($user === false) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menü – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=camp-1">
+    <script src="theme.js?v=camp-1"></script>
 </head>
 <body class="menu-page">
-    <header class="site-header">
-        <a class="brand" href="menu.php">99 Luftballons</a>
-        <nav>
-            <a href="leaderboard.php">Bestenliste</a>
-            <a href="account.php">Account</a>
-            <a href="logout.php">Logout</a>
-        </nav>
-    </header>
+    <?php require __DIR__ . '/site-header.php'; ?>
 
-    <main class="menu-card">
-        <p class="eyebrow">Hauptmenü</p>
+    <main id="main-content" class="menu-card camp-card">
+        <div class="camp-copy"><p class="eyebrow"><span class="status-dot"></span> Dein Basislager</p>
         <h1>Hallo, <?= htmlspecialchars($user['username'], ENT_QUOTES, 'UTF-8') ?>!</h1>
-        <p>Dein Account ist bestätigt und du bist erfolgreich eingeloggt.</p>
-        <a class="primary-link" href="game.php">Spiel starten</a>
+        <p>Die Ballons sind unterwegs. Baue deine Verteidigung, beschütze deine Basis und fordere die KI heraus.</p>
+        <div class="button-row"><a class="primary-link" href="game.php">Spiel starten <span aria-hidden="true">→</span></a><a class="secondary-link" href="leaderboard.php">Bestenliste</a></div>
+        <p class="camp-footnote">Deine nächste Runde wartet schon.</p></div>
+        <figure class="map-preview">
+            <img src="game/assets/Maps/Grafik.webp" alt="Waldkarte mit kurvigen Wegen, Bauflächen und einer befestigten Basis" width="1024" height="765">
+            <figcaption><span class="map-caption-icon" aria-hidden="true">⌁</span><span><small>Ein Blick in die Spielwelt</small><strong>Zwischen Wald &amp; Abenteuer</strong></span></figcaption>
+        </figure>
     </main>
 </body>
 </html>

@@ -49,12 +49,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=camp-1">
     <script src="password-toggle.js" defer></script>
+    <script src="theme.js?v=camp-1"></script>
 </head>
 <body class="auth-page">
-    <main class="auth-card">
-        <h1>Anmelden</h1>
+    <?php require __DIR__ . '/site-header.php'; ?>
+    <main id="main-content" class="auth-card">
+        <p class="eyebrow">Willkommen zurück</p>
+        <h1>Bereit für eine Runde?</h1>
+        <p class="card-intro">Melde dich an. Dein Basislager wartet.</p>
 
         <?php if ($error !== ''): ?>
             <div class="message error" role="alert">

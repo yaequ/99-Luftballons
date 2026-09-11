@@ -28,11 +28,15 @@ if (is_string($token) && strlen($token) === 64 && ctype_xdigit($token)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Mail bestätigen – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=camp-1">
+    <script src="theme.js?v=camp-1"></script>
 </head>
 <body class="auth-page">
-    <main class="auth-card">
-        <h1>E-Mail-Bestätigung</h1>
+    <?php require __DIR__ . '/site-header.php'; ?>
+    <main id="main-content" class="auth-card">
+        <div class="verification-icon <?= $verified ? 'is-success' : 'is-error' ?>" aria-hidden="true"><?= $verified ? '✓' : '!' ?></div>
+        <p class="eyebrow">Fast startklar</p>
+        <h1>E-Mail bestätigen</h1>
         <div class="message <?= $verified ? 'success' : 'error' ?>">
             <p><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p>
         </div>

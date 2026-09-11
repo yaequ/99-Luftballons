@@ -43,20 +43,16 @@ function format_duration(int $seconds): string
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bestenliste – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=camp-1">
+    <script src="theme.js?v=camp-1"></script>
 </head>
 <body class="menu-page">
-    <header class="site-header">
-        <a class="brand" href="menu.php">99 Luftballons</a>
-        <nav>
-            <a href="account.php">Account</a>
-            <a href="logout.php">Logout</a>
-        </nav>
-    </header>
+    <?php require __DIR__ . '/site-header.php'; ?>
 
-    <main class="menu-card leaderboard-card">
+    <main id="main-content" class="menu-card leaderboard-card">
         <p class="eyebrow">Bestenliste</p>
         <h1>Die besten Ballonjäger</h1>
+        <p class="card-intro">Große Siege. Schnelle Runden. Ein Platz ganz oben.</p>
         <div class="leaderboard-tabs" aria-label="Sortierung der Bestenliste">
             <a class="<?= $sort === 'fastest' ? 'active' : '' ?>" href="leaderboard.php?sort=fastest">Schnellste Siege</a>
             <a class="<?= $sort === 'wins' ? 'active' : '' ?>" href="leaderboard.php?sort=wins">Meiste Siege</a>
@@ -82,7 +78,7 @@ function format_duration(int $seconds): string
                     <tbody>
                         <?php foreach ($entries as $index => $entry): ?>
                             <tr>
-                                <td><?= $index + 1 ?></td>
+                                <td><span class="rank-badge rank-<?= $index + 1 ?>"><?= $index + 1 ?></span></td>
                                 <td><?= htmlspecialchars($entry['username'], ENT_QUOTES, 'UTF-8') ?></td>
                                 <?php if ($sort === 'fastest'): ?>
                                     <td><?= format_duration((int) $entry['duration_seconds']) ?></td>
