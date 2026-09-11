@@ -28,7 +28,7 @@ if (is_string($token) && strlen($token) === 64 && ctype_xdigit($token)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Mail bestätigen – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css?v=camp-1">
+    <link rel="stylesheet" href="style.css?v=portal-1">
     <script src="theme.js?v=camp-1"></script>
 </head>
 <body class="auth-page">

@@ -3,8 +3,8 @@
 $headerLoggedIn = isset($_SESSION['user_id']);
 $headerPage = basename($_SERVER['SCRIPT_NAME'] ?? '');
 $headerLinks = $headerLoggedIn
-    ? ['menu.php' => 'Basislager', 'leaderboard.php' => 'Bestenliste', 'account.php' => 'Account', 'logout.php' => 'Logout']
-    : ['login.php' => 'Anmelden', 'register.php' => 'Mitspielen'];
+    ? ['menu.php' => 'Basislager', 'instructions.php' => 'Anleitung', 'leaderboard.php' => 'Bestenliste', 'history.php' => 'Meine Runden', 'account.php' => 'Account', 'logout.php' => 'Logout']
+    : ['instructions.php' => 'Anleitung', 'leaderboard.php' => 'Bestenliste', 'login.php' => 'Anmelden', 'register.php' => 'Mitspielen'];
 ?>
 <a class="skip-link" href="#main-content">Zum Inhalt</a>
 <header class="site-header">

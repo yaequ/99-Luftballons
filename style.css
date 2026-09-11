@@ -199,3 +199,74 @@ form > .primary-button { margin-top: .8rem; width: 100%; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Portal pages reuse the existing camp palette in light and dark mode. */
+.portal-shell { width: min(calc(100% - 2.5rem), 1120px); margin: clamp(2rem, 6vh, 5rem) auto; padding-bottom: 2rem; }
+.portal-panel { padding: clamp(1.3rem, 3vw, 2.4rem); background: var(--paper); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); min-width: 0; }
+.portal-section { margin-top: 2.5rem; }
+.portal-shell h2 { font-size: clamp(1.5rem, 3vw, 2.15rem); }
+.portal-shell h3 { margin: .8rem 0 .5rem; font-family: var(--heading); font-size: 1.15rem; line-height: 1.3; }
+.portal-panel p { color: var(--muted); }
+.portal-panel .eyebrow { color: var(--green); }
+.landing-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+.landing-hero .camp-footnote { margin-top: 1.5rem; color: var(--muted); font-size: .78rem; }
+.page-heading { text-align: center; margin-bottom: 2rem; }
+.page-heading .card-intro { margin-bottom: 0; }
+.feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem; margin: 1.5rem 0; }
+.feature-grid p { font-size: .92rem; color: var(--muted); }
+.step-number { display: inline-grid; place-items: center; width: 42px; height: 42px; background: var(--soft); color: var(--green); border-radius: 14px; font-weight: 800; }
+.feature-grid article:nth-child(2) .step-number { background: #f6dfb2; color: #754a16; }
+.feature-grid article:nth-child(3) .step-number { background: #d6edf4; color: #355c70; }
+.text-link { font-size: .9rem; font-weight: 800; display: inline-block; padding: .5rem 0; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.section-heading .eyebrow { margin-bottom: .5rem; }
+.map-gallery { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+.map-gallery figure { margin: 0; border-radius: 18px; overflow: hidden; background: var(--paper); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.map-gallery img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+.map-gallery figcaption { padding: .7rem 1rem; font-size: .86rem; font-weight: 800; }
+.podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; list-style: none; padding: 0; margin: 2rem 0; }
+.podium-card { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: .6rem; padding: 1.4rem .8rem; border: 1px solid var(--line); border-radius: 20px; background: var(--soft); }
+.podium-card strong { overflow-wrap: anywhere; text-align: center; max-width: 100%; font-size: 1.05rem; }
+.podium-card > span:last-child { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.podium-card .rank-badge { width: 46px; height: 46px; font-size: 1.3rem; }
+.podium-1 { border-top: 5px solid #e7b94d; }
+.podium-2 { border-top: 5px solid #a9bec7; }
+.podium-3 { border-top: 5px solid #c9936d; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.stat-card { text-align: center; padding: 1.5rem 1rem; }
+.stat-card span { font-size: .78rem; color: var(--muted); }
+.stat-card strong { display: block; font-size: clamp(1.7rem, 4vw, 2.5rem); color: var(--green); font-family: var(--heading); overflow-wrap: anywhere; }
+.filter-pills { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; margin: 1rem 0; }
+.filter-pills a { display: inline-flex; align-items: center; min-height: 44px; border-radius: 24px; border: 1px solid var(--line); padding: .5rem 1rem; background: var(--soft); color: var(--ink); text-decoration: none; font-size: .83rem; }
+.filter-pills a[aria-current="page"] { background: var(--green); color: var(--paper); }
+.table-caption { text-align: left; padding: .75rem 1rem; color: var(--muted); font-size: .8rem; background: var(--paper); }
+.ranking-note { font-size: .78rem; }
+.own-rank { padding: 1rem 1.2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; border: 1px solid var(--green); border-radius: 14px; background: var(--soft); }
+.own-rank span { font-size: .85rem; }
+.leaderboard-table tbody tr.current-user { background: var(--soft); outline: 2px solid var(--green); outline-offset: -2px; }
+.personal-best { display: inline-block; font-size: .65rem; font-weight: 700; background: var(--soft); color: var(--green); padding: .15rem .4rem; border-radius: 5px; }
+.result-badge { display: inline-block; font-size: .75rem; font-weight: 700; padding: .2rem .5rem; border-radius: 8px; }
+.result-win { color: #285d3c; background: #e5f3de; }
+.result-loss { color: #813c39; background: #ffeae3; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; font-size: .85rem; }
+.guide-nav { margin-bottom: 2rem; }
+.tower-price { color: var(--green); font-size: .8rem; font-weight: 800; }
+.balloon-dot { display: inline-block; width: 13px; height: 17px; border-radius: 50%; margin-right: .35rem; vertical-align: middle; }
+.balloon-dot.red { background: #d9554f; }.balloon-dot.blue { background: #409aca; }
+.balloon-dot.green { background: #469652; }.balloon-dot.yellow { background: #e7b542; }
+.controls-list { display: grid; grid-template-columns: minmax(140px, .4fr) 1fr; gap: 1rem 2rem; }
+.controls-list dt { font-weight: 700; }.controls-list dd { margin: 0; color: var(--muted); }
+kbd { display: inline-block; background: var(--soft); border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 5px; padding: .1rem .4rem; font-size: .8rem; }
+section[id] { scroll-margin-top: 2rem; }
+@media (max-width: 900px) {
+    .landing-hero { grid-template-columns: 1fr; gap: 2rem; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .stats-grid, .map-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .site-header { flex-wrap: wrap; }
+}
+@media (max-width: 480px) {
+    .portal-shell { width: calc(100% - 1.5rem); }
+    .podium { gap: .45rem; }.podium-card { padding: 1rem .4rem; }.podium-card strong { font-size: .8rem; }
+    .controls-list { grid-template-columns: 1fr; gap: .5rem; }.controls-list dd { margin-bottom: 1rem; }
+    .stats-grid { gap: .6rem; }.stat-card { padding: 1rem .6rem; }
+}

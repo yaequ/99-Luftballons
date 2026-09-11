@@ -25,6 +25,7 @@ jobs:
             --exclude '.git/' \
             --exclude '.github/' \
             --exclude 'deploy/' \
+            --exclude 'tests/' \
             --exclude 'config.local.php' \
             --exclude '.DS_Store' \
             ./ deploy/

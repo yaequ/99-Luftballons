@@ -23,7 +23,7 @@ if ($user === false) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menü – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css?v=camp-1">
+    <link rel="stylesheet" href="style.css?v=portal-1">
     <script src="theme.js?v=camp-1"></script>
 </head>
 <body class="menu-page">
@@ -34,7 +34,7 @@ if ($user === false) {
         <h1>Hallo, <?= htmlspecialchars($user['username'], ENT_QUOTES, 'UTF-8') ?>!</h1>
         <p>Die Ballons sind unterwegs. Baue deine Verteidigung, beschütze deine Basis und fordere die KI heraus.</p>
         <div class="button-row"><a class="primary-link" href="game.php">Spiel starten <span aria-hidden="true">→</span></a><a class="secondary-link" href="leaderboard.php">Bestenliste</a></div>
-        <p class="camp-footnote">Deine nächste Runde wartet schon.</p></div>
+        <p class="camp-footnote"><a href="account.php">Meine Statistiken</a> · <a href="instructions.php">Spielanleitung</a></p></div>
         <figure class="map-preview">
             <img src="game/assets/Maps/Grafik.webp" alt="Waldkarte mit kurvigen Wegen, Bauflächen und einer befestigten Basis" width="1024" height="765">
             <figcaption><span class="map-caption-icon" aria-hidden="true">⌁</span><span><small>Ein Blick in die Spielwelt</small><strong>Zwischen Wald &amp; Abenteuer</strong></span></figcaption>
