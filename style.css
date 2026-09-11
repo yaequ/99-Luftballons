@@ -158,8 +158,8 @@ form > .primary-button { margin-top: .8rem; width: 100%; }
 /* Rankings: restrained rows, small medals, a shared segmented switch. */
 .leaderboard-card { width: min(calc(100% - 2rem), 880px); }
 .leaderboard-card h1 { font-size: clamp(2rem, 4vw, 3rem); }
-.leaderboard-tabs { display: flex; gap: .35rem; width: fit-content; max-width: 100%; margin: 1.8rem auto; padding: .35rem; border-radius: 16px; background: var(--soft); border: 1px solid var(--line); }
-.leaderboard-tabs a { flex: 1; padding: .65rem 1rem; border-radius: 11px; color: var(--muted); text-decoration: none; font-size: .8rem; font-weight: 800; }
+.leaderboard-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem; width: min(100%, 500px); margin: 1.8rem auto; padding: .35rem; border-radius: 16px; background: var(--soft); border: 1px solid var(--line); }
+.leaderboard-tabs a { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: .65rem 1rem; border-radius: 11px; color: var(--muted); text-align: center; text-decoration: none; font-size: .8rem; font-weight: 800; white-space: nowrap; }
 .leaderboard-tabs a.active { color: var(--green); background: var(--paper); box-shadow: 0 2px 5px #163e2412; }
 .leaderboard-table-wrapper { overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--line); border-radius: 16px; }
 .leaderboard-table { border-collapse: collapse; width: 100%; text-align: left; font-size: .88rem; font-variant-numeric: tabular-nums; }
@@ -191,7 +191,7 @@ form > .primary-button { margin-top: .8rem; width: 100%; }
     .button-row { flex-direction: column; }
     .camp-card { width: calc(100% - 2rem); }
     .leaderboard-table th, .leaderboard-table td { padding: .65rem; }
-    .leaderboard-tabs a { padding: .6rem; }
+    .leaderboard-tabs a { padding: .6rem .4rem; font-size: .73rem; }
 }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
