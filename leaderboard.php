@@ -55,4 +55,4 @@ function board_url(string $sort, string $period): string {
         </table></div>
         <?php endif; ?>
     </section>
-</main></body></html>
+</main><?php require __DIR__ . '/site-footer.php'; ?></body></html>

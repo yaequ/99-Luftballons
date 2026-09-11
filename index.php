@@ -58,4 +58,5 @@ $loggedIn = isset($_SESSION['user_id']);
         </div>
     </section>
 </main>
+<?php require __DIR__ . '/site-footer.php'; ?>
 </body></html>

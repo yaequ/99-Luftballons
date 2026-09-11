@@ -34,4 +34,4 @@ $best = $stats['best'] === null ? null : (int) $stats['best'];
         <?php endif; ?>
         <div class="button-row"><a class="secondary-link" href="account.php">Zum Profil</a><a class="primary-link" href="game.php">Spiel starten</a></div>
     </section>
-</main></body></html>
+</main><?php require __DIR__ . '/site-footer.php'; ?></body></html>

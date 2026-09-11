@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css?v=portal-1">
+    <link rel="stylesheet" href="style.css?v=legal-1">
     <script src="password-toggle.js" defer></script>
     <script src="theme.js?v=camp-1"></script>
 </head>
@@ -88,5 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <p class="auth-link">Noch kein Account? <a href="register.php">Jetzt registrieren</a></p>
     </main>
+    <?php require __DIR__ . '/site-footer.php'; ?>
 </body>
 </html>

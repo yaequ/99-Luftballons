@@ -43,4 +43,4 @@ $best = $stats['best'] === null ? null : (int) $stats['best'];
         <?php history_table($recent['entries'], $best); ?>
         <a class="primary-link" href="game.php">Nächste Runde starten →</a>
     </section>
-</main></body></html>
+</main><?php require __DIR__ . '/site-footer.php'; ?></body></html>

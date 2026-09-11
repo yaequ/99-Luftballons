@@ -57,6 +57,8 @@ $fixtures = [
     'history.php' => ['filter'=>'all', 'history'=>$first, 'best'=>10],
     'leaderboard.php' => ['sort'=>'fastest', 'period'=>'all', 'userId'=>15, 'board'=>$board, 'entries'=>$board['entries'], 'mine'=>$board['mine']],
     'instructions.php' => [],
+    'imprint.php' => [],
+    'privacy.php' => [],
 ];
 // Defined in leaderboard.php's controller, skipped when testing the template only.
 function board_url(string $sort, string $period): string { return 'leaderboard.php?' . escape(http_build_query(['sort'=>$sort,'period'=>$period])); }
@@ -72,4 +74,5 @@ foreach ($fixtures as $file => $vars) {
     };
     $html = $render();
     check(substr_count($html, '<header class="site-header">') === 1 && str_contains($html, 'id="main-content"'), "$file renders with shared navigation");
+    check(substr_count($html, '<footer class="site-footer">') === 1, "$file renders with shared legal footer");
 }

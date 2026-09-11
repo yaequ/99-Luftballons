@@ -55,4 +55,4 @@ require __DIR__ . '/portal.php';
         <p>Auf einem größeren Bildschirm kannst du beide Karten besonders gut im Blick behalten.</p>
         <div class="button-row"><a class="primary-link" href="<?= isset($_SESSION['user_id']) ? 'game.php' : 'register.php' ?>">Los geht’s →</a><a class="secondary-link" href="index.php">Zur Startseite</a></div>
     </section>
-</main></body></html>
+</main><?php require __DIR__ . '/site-footer.php'; ?></body></html>
