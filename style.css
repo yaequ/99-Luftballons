@@ -273,18 +273,14 @@ section[id] { scroll-margin-top: 2rem; }
 .site-footer nav a:hover, .site-footer nav a[aria-current="page"] { color: var(--green); background: var(--soft); }
 .site-footer p { justify-self: end; margin: 0; color: var(--muted); font-size: .72rem; }
 
-/* Legal pages use the same playful cards, with unmistakable editable placeholders. */
+/* Legal pages use the same playful card layout as the rest of the portal. */
 .legal-page { max-width: 920px; }
-.placeholder-notice { margin: 0 0 1.25rem; padding: 1rem 1.2rem; border: 1px solid #d5a846; border-left-width: 5px; border-radius: 15px; color: #68470d; background: #fff0be; }
-.placeholder-notice strong { font-family: var(--heading); }
-.placeholder-notice p { margin: .25rem 0 0; font-size: .85rem; }
 .legal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; }
 .legal-copy h2 { margin-top: 2.25rem; font-size: 1.35rem; letter-spacing: -.025em; }
 .legal-copy h2:first-child { margin-top: 0; }
 .legal-copy p, .legal-copy address, .legal-grid address { color: var(--muted); font-style: normal; }
 .legal-copy code { padding: .1rem .3rem; border-radius: 5px; background: var(--soft); color: var(--ink); }
 .legal-page mark { padding: .05rem .2rem; border-radius: 4px; background: #ffe39a; color: #563b0a; }
-[data-theme="dark"] .placeholder-notice { color: #ffe6a0; background: #5a481f; border-color: #a8873d; }
 [data-theme="dark"] .legal-page mark { color: #fff0bb; background: #69521f; }
 @media (max-width: 900px) {
     .landing-hero { grid-template-columns: 1fr; gap: 2rem; }

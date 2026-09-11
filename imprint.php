@@ -9,11 +9,6 @@ require __DIR__ . '/portal.php';
 <main id="main-content" class="portal-shell legal-page">
     <div class="page-heading"><p class="eyebrow">Kontakt &amp; Verantwortung</p><h1>Impressum</h1><p class="card-intro">Angaben zum Betreiber dieses Webprojekts.</p></div>
 
-    <aside class="placeholder-notice" role="note">
-        <strong>Vorlage mit Beispieldaten</strong>
-        <p>Die gelb markierten Angaben müssen vor einer echten Veröffentlichung durch die korrekten Betreiber- und Kontaktdaten ersetzt werden.</p>
-    </aside>
-
     <div class="legal-grid">
         <section class="portal-panel">
             <p class="eyebrow">Anbieter</p><h2>Angaben gemäß § 5 DDG</h2>

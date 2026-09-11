@@ -9,11 +9,6 @@ require __DIR__ . '/portal.php';
 <main id="main-content" class="portal-shell legal-page">
     <div class="page-heading"><p class="eyebrow">Deine Daten im Blick</p><h1>Datenschutz</h1><p class="card-intro">Kurz und verständlich: welche Daten dieses Webprojekt verarbeitet und warum.</p></div>
 
-    <aside class="placeholder-notice" role="note">
-        <strong>Vorlage mit Beispieldaten</strong>
-        <p>Ersetze die gelb markierten Angaben vor der endgültigen Abgabe durch die echten Daten der verantwortlichen Person.</p>
-    </aside>
-
     <section class="portal-panel legal-copy">
         <h2>1. Verantwortliche Person</h2>
         <address><mark>Max Mustermann</mark> · <mark>Musterstraße 12, 12345 Musterstadt</mark><br>E-Mail: <a href="mailto:max.mustermann@example.com"><mark>max.mustermann@example.com</mark></a></address>
