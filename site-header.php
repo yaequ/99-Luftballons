@@ -24,7 +24,8 @@ $headerLinks = $headerLoggedIn
             <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A9 9 0 0 1 8.5 4a9 9 0 1 0 11.5 11.5Z"/></svg>
         </button>
         <?php if ($headerLoggedIn): $headerAvatar = avatar_data($_SESSION['avatar_code'] ?? 'forest_guardian'); ?>
-            <a class="header-avatar<?= $headerPage === 'account.php' ? ' is-current' : '' ?>" href="account.php" aria-label="Account – Avatar <?= htmlspecialchars($headerAvatar['name'], ENT_QUOTES, 'UTF-8') ?>"<?= $headerPage === 'account.php' ? ' aria-current="page"' : '' ?>><img src="<?= htmlspecialchars($headerAvatar['image'], ENT_QUOTES, 'UTF-8') ?>" alt="" width="512" height="512"></a>
+            <?php $headerAccountCurrent = in_array($headerPage, ['account.php', 'settings.php'], true); ?>
+            <a class="header-avatar<?= $headerAccountCurrent ? ' is-current' : '' ?>" href="account.php" aria-label="Account – Avatar <?= htmlspecialchars($headerAvatar['name'], ENT_QUOTES, 'UTF-8') ?>"<?= $headerAccountCurrent ? ' aria-current="page"' : '' ?>><img src="<?= htmlspecialchars($headerAvatar['image'], ENT_QUOTES, 'UTF-8') ?>" alt="" width="512" height="512"></a>
         <?php endif; ?>
     </nav>
 </header>

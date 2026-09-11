@@ -20,6 +20,7 @@ $loggedIn = isset($_SESSION['user_id']);
 <body>
 <?php require __DIR__ . '/site-header.php'; ?>
 <main id="main-content" class="portal-shell">
+    <?php if (($_GET['account'] ?? null) === 'deleted'): ?><div class="message success" role="status"><p>Dein Account und die zugehörigen Daten wurden vollständig gelöscht.</p></div><?php endif; ?>
     <section class="portal-panel landing-hero">
         <div>
             <p class="eyebrow">Kleine Ballons. Großes Abenteuer.</p>

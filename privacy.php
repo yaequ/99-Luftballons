@@ -26,7 +26,7 @@ require __DIR__ . '/portal.php';
         <p>Für die Anmeldung verwendet die Website ein technisch notwendiges Session-Cookie. Es ist mit <code>HttpOnly</code> und <code>SameSite=Lax</code> abgesichert und wird bei verschlüsseltem Zugriff nur über HTTPS übertragen. Die Auswahl zwischen hellem und dunklem Design wird ausschließlich lokal im Browser gespeichert. Es werden keine Analyse- oder Werbe-Cookies eingesetzt.</p>
 
         <h2>6. Speicherdauer</h2>
-        <p>Kontodaten und zugehörige Spielergebnisse bleiben grundsätzlich gespeichert, solange das Benutzerkonto besteht. Nicht mehr benötigte Daten werden gelöscht, sofern keine gesetzlichen Aufbewahrungspflichten entgegenstehen. Die tatsächlichen Löschabläufe müssen vor dem Produktivbetrieb festgelegt und dokumentiert werden.</p>
+        <p>Kontodaten und zugehörige Spielergebnisse bleiben grundsätzlich gespeichert, solange das Benutzerkonto besteht. Über die Kontoeinstellungen kann der Account einschließlich der zugehörigen Spielergebnisse, Profilinformationen und freigeschalteten Abzeichen selbstständig gelöscht werden. Nicht mehr benötigte Daten werden gelöscht, sofern keine gesetzlichen Aufbewahrungspflichten entgegenstehen.</p>
 
         <h2>7. Empfänger und Übermittlung</h2>
         <p>Technische Daten können im Rahmen des Hostings durch IONOS verarbeitet werden. Eine Übermittlung zu Werbe- oder Analysezwecken findet über diese Website nicht statt. Ob und welche Unterauftragnehmer der Hosting-Anbieter einsetzt, ist anhand des abgeschlossenen Hosting-Vertrags zu ergänzen.</p>

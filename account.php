@@ -50,6 +50,7 @@ $achievementCount = count(array_filter($achievements, static fn(array $achieveme
         <div class="profile-avatar"><img src="<?= escape($selectedAvatarData['image']) ?>" alt="<?= escape($selectedAvatarData['name']) ?>" width="512" height="512"></div><p class="eyebrow">Dein Platz im Basislager</p>
         <h1><?= escape($player['username']) ?></h1>
         <p class="card-intro">Dabei seit <?= escape((new DateTimeImmutable($player['created_at']))->format('d.m.Y')) ?>.</p>
+        <a class="secondary-link" href="settings.php">Kontoeinstellungen</a>
     </div>
     <section class="stats-grid" aria-label="Deine Spielstatistiken">
         <div class="portal-panel stat-card"><span>Gespielte Partien</span><strong><?= (int) $stats['matches'] ?></strong></div>
