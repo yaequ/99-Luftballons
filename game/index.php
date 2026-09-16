@@ -10,17 +10,17 @@ require_login();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111317">
+  <meta name="theme-color" content="#dff2f8">
   <title>99 Luftballons – KI-Duell</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=integrated-modules-1">
+  <link rel="stylesheet" href="style.css?v=game-ui-step-1">
 </head>
 <body>
   <div id="game-app">
     <section id="screen-lobby" class="screen active" aria-labelledby="game-title">
       <div class="lobby-backdrop" aria-hidden="true"></div>
       <div class="lobby-shell pixel-frame">
-        <p class="eyebrow">Pixel Tower Defense</p>
+        <p class="eyebrow">Tower Defense · KI-Duell</p>
         <h1 id="game-title">99 LUFTBALLONS</h1>
         <p class="lobby-copy">Spiel wird geladen …</p>
         <p id="lobby-status" class="status-message" aria-live="polite">Grafiken werden geladen.</p>
@@ -28,11 +28,10 @@ require_login();
     </section>
 
     <section id="screen-game" class="screen" aria-label="Laufendes KI-Duell">
-        <nav class="game-navigation" aria-label="Spielmenü">
-          <button class="pixel-btn" id="btn-pause" type="button" disabled aria-pressed="false">Pausieren</button>
-          <span id="pause-status" role="status"></span>
+      <div class="game-frame">
+        <div class="game-topbar">
           <details class="home-menu pixel-frame" id="game-menu">
-            <summary>Menü</summary>
+            <summary aria-label="Spielmenü öffnen"><span aria-hidden="true">☰</span> Menü</summary>
             <div class="home-menu__buttons">
               <a class="pixel-btn" href="../menu.php">Basislager</a>
               <a class="pixel-btn" href="../leaderboard.php">Bestenliste</a>
@@ -40,32 +39,45 @@ require_login();
               <a class="pixel-btn" href="../account.php">Account</a>
             </div>
           </details>
-        </nav>
-      <div class="game-frame pixel-frame">
-        <header id="game-hud" class="hud">
-          <div class="brand-mini">99 <span>LUFTBALLONS</span></div>
-          <div class="hud__round"><span>Runde</span><strong id="wave-counter">0/30</strong><small id="round-state">Bereit</small></div>
-          <div class="hud__time"><span>Zeit</span><strong id="match-timer">00:00</strong></div>
-          <div class="hud__economy">
-            <span class="hud__metric hud__metric--player"><span>Du</span><strong id="p1-hp">99 HP</strong></span>
-            <span class="hud__metric hud__metric--gold"><span>Gold</span><strong id="p1-gold">100</strong></span>
-            <span class="hud__versus">VS</span>
-            <span class="hud__metric hud__metric--enemy"><span>KI</span><strong id="p2-hp">99 HP</strong></span>
-            <span class="hud__metric"><span>KI-Gold</span><strong id="p2-gold">100</strong></span>
+          <a class="game-brand" href="../index.php" aria-label="99 Luftballons – Startseite"><img src="../assets/img/branding/logo.png" alt="99 Luftballons" width="1024" height="512"></a>
+          <div class="topbar-actions">
+            <div class="hud__time"><span>Zeit</span><strong id="match-timer">00:00</strong></div>
+            <button class="pixel-btn topbar-button" id="btn-pause" type="button" disabled aria-pressed="false">Pausieren</button>
+            <button id="btn-toggle-controls" class="view-btn control-toggle" type="button" aria-expanded="true" aria-controls="game-controls">Interface ausblenden</button>
           </div>
-        </header>
-
-        <div class="round-toolbar" aria-label="Rundensteuerung">
-          <div class="round-summary"><span>Verbleibend</span><strong id="remaining-enemies">0</strong></div>
-          <div class="round-summary round-summary--wide"><span>Nächste Runde</span><strong id="next-wave-preview">100 rote Ballons</strong><small id="round-countdown">Warte auf Start</small></div>
-          <button id="btn-start-round" class="pixel-btn pixel-btn--round" type="button">Spiel starten</button>
-          <label class="auto-start-control"><input id="input-auto-start" type="checkbox" checked><span>Auto-Start</span></label>
-          <button id="btn-toggle-controls" class="view-btn control-toggle" type="button" aria-expanded="true" aria-controls="game-controls">Interface ausblenden</button>
+          <span id="pause-status" role="status"></span>
         </div>
+
+        <header id="game-hud" class="hud">
+          <section class="combatant-card combatant-card--player" aria-label="Dein Spielstand">
+            <p>Deine Basis</p>
+            <div class="combatant-metrics">
+              <span class="hud__metric"><span>Leben</span><strong id="p1-hp">99 HP</strong></span>
+              <span class="hud__metric hud__metric--gold"><span>Gold</span><strong id="p1-gold">100</strong></span>
+              <span class="hud__metric"><span>Einkommen</span><strong id="p1-income">+10/s</strong></span>
+            </div>
+          </section>
+
+          <section class="round-focus" aria-label="Rundeninformationen">
+            <div class="round-focus__title"><span>Runde</span><strong id="wave-counter">0/30</strong><small id="round-state">Bereit</small></div>
+            <div class="round-focus__details">
+              <div class="round-summary"><span>Verbleibend</span><strong id="remaining-enemies">0</strong></div>
+              <div class="round-summary round-summary--wide"><span>Nächste Runde</span><strong id="next-wave-preview">100 rote Ballons</strong><small id="round-countdown">Warte auf Start</small></div>
+            </div>
+          </section>
+
+          <section class="combatant-card combatant-card--enemy" aria-label="Spielstand der KI">
+            <p>KI-Basis</p>
+            <div class="combatant-metrics combatant-metrics--enemy">
+              <span class="hud__metric hud__metric--enemy"><span>Leben</span><strong id="p2-hp">99 HP</strong></span>
+              <span class="hud__metric hud__metric--gold"><span>Gold</span><strong id="p2-gold">100</strong></span>
+            </div>
+          </section>
+        </header>
 
         <main class="maps-grid" id="maps-grid">
           <section class="map-panel map-panel--player" aria-labelledby="player-map-title">
-            <header class="map-panel__header"><div><span>Deine Karte</span><strong id="player-map-title">Frostpfad</strong></div><div class="income-readout"><span>Einkommen</span><strong id="p1-income">+10/s</strong></div></header>
+            <header class="map-panel__header"><div><span>Deine Karte</span><strong id="player-map-title">Frostpfad</strong></div><span class="map-panel__status">Verteidigen</span></header>
             <div class="map-stage" id="player-map-stage">
               <canvas id="canvas-player" class="game-canvas" width="960" height="720" tabindex="0" aria-label="Deine Verteidigungskarte. Turm wählen, mit Pfeiltasten Bauposition bewegen und mit Enter platzieren." aria-describedby="keyboard-help"></canvas>
               <div class="sr-only" id="map-tip" aria-live="polite"><span class="map-tip__step">1</span><span>Turm wählen und auf einer dunklen Baufläche platzieren.</span></div>
@@ -77,6 +89,11 @@ require_login();
           </section>
           <p id="keyboard-help" class="sr-only">Nach der Turmauswahl bewegt man den Baucursor mit den Pfeiltasten. Enter platziert den Turm, Escape bricht ab.</p>
         </main>
+
+        <div class="round-toolbar" aria-label="Rundensteuerung">
+          <label class="auto-start-control"><input id="input-auto-start" type="checkbox" checked><span>Auto-Start</span></label>
+          <button id="btn-start-round" class="pixel-btn pixel-btn--round" type="button">Spiel starten</button>
+        </div>
 
         <footer id="game-controls" class="control-dock">
           <section class="control-panel" aria-labelledby="tower-panel-title">
