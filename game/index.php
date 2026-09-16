@@ -13,7 +13,7 @@ require_login();
   <meta name="theme-color" content="#dff2f8">
   <title>99 Luftballons – KI-Duell</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=game-ui-polish-3">
+  <link rel="stylesheet" href="style.css?v=game-ui-polish-4">
 </head>
 <body>
   <div id="game-app">
@@ -108,18 +108,18 @@ require_login();
             <section class="control-panel" aria-labelledby="tower-panel-title">
             <div class="panel-heading"><div><span class="panel-kicker">Verteidigung</span><h2 id="tower-panel-title">Turm auswählen</h2></div><span class="panel-hint">Danach Baufläche anklicken oder Tastatur verwenden</span></div>
             <div class="action-grid action-grid--towers">
-              <button class="action-card build-btn" data-tower="cactus" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__name">Kaktus</span><span class="action-card__meta">Schneller Schaden</span><span class="action-card__cost">25 G</span></button>
-              <button class="action-card build-btn" data-tower="fan" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__name">Gebläse</span><span class="action-card__meta">Kurze Abklingzeit</span><span class="action-card__cost">45 G</span></button>
-              <button class="action-card build-btn" data-tower="lens" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__name">Lupe</span><span class="action-card__meta">Hoher Schaden</span><span class="action-card__cost">70 G</span></button>
+              <button class="action-card build-btn" data-tower="cactus" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Kaktus</strong><span class="action-card__meta">Schneller Schaden</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>25</strong></span></span></button>
+              <button class="action-card build-btn" data-tower="fan" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Gebläse</strong><span class="action-card__meta">Kurze Abklingzeit</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>45</strong></span></span></button>
+              <button class="action-card build-btn" data-tower="lens" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Lupe</strong><span class="action-card__meta">Hoher Schaden</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>70</strong></span></span></button>
             </div>
             </section>
             <section class="control-panel control-panel--attacks" aria-labelledby="attack-panel-title">
             <div class="panel-heading"><div><span class="panel-kicker">Angriff</span><h2 id="attack-panel-title">Ballons senden</h2></div></div>
             <div class="action-grid action-grid--balloons">
-              <button class="balloon-card send-btn balloon-card--red" data-balloon="red" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="red" width="64" height="64" aria-hidden="true"></canvas><span><strong>Rot</strong><small>10 G · +1/s</small></span></button>
-              <button class="balloon-card send-btn balloon-card--blue" data-balloon="blue" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="blue" width="64" height="64" aria-hidden="true"></canvas><span><strong>Blau</strong><small>25 G · +2/s</small></span></button>
-              <button class="balloon-card send-btn balloon-card--green" data-balloon="green" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="green" width="64" height="64" aria-hidden="true"></canvas><span><strong>Grün</strong><small>45 G · +4/s</small></span></button>
-              <button class="balloon-card send-btn balloon-card--yellow" data-balloon="yellow" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="yellow" width="64" height="64" aria-hidden="true"></canvas><span><strong>Gelb</strong><small>70 G · +7/s</small></span></button>
+              <button class="balloon-card send-btn balloon-card--red" data-balloon="red" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="red" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Rot</strong><small class="balloon-card__batch">10 Ballons</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">10</strong></span><span class="income-chip balloon-card__income">+1/s</span></span></span></button>
+              <button class="balloon-card send-btn balloon-card--blue" data-balloon="blue" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="blue" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Blau</strong><small class="balloon-card__batch">10 Ballons</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">25</strong></span><span class="income-chip balloon-card__income">+2/s</span></span></span></button>
+              <button class="balloon-card send-btn balloon-card--green" data-balloon="green" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="green" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Grün</strong><small class="balloon-card__batch">10 Ballons</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">45</strong></span><span class="income-chip balloon-card__income">+4/s</span></span></span></button>
+              <button class="balloon-card send-btn balloon-card--yellow" data-balloon="yellow" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="yellow" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Gelb</strong><small class="balloon-card__batch">10 Ballons</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">70</strong></span><span class="income-chip balloon-card__income">+7/s</span></span></span></button>
             </div>
             </section>
           </footer>
@@ -131,6 +131,6 @@ require_login();
     <div id="modal-load-error" class="modal" role="dialog" aria-modal="true" aria-labelledby="load-error-title"><div class="modal-content pixel-frame"><p class="eyebrow">Ladefehler</p><h2 id="load-error-title">Asset fehlt</h2><p id="load-error-message"></p><div class="modal-actions"><button id="btn-retry-load" class="pixel-btn pixel-btn--primary" type="button">Erneut versuchen</button><button id="btn-cancel-load" class="pixel-btn" type="button">Zum Basislager</button></div></div></div>
   </div>
   <div id="game-toast" class="game-toast" role="status" aria-live="polite" hidden></div>
-  <script src="game.bundle.js?v=game-ui-polish-3"></script>
+  <script src="game.bundle.js?v=game-ui-polish-4"></script>
 </body>
 </html>
