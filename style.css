@@ -326,7 +326,53 @@ section[id] { scroll-margin-top: 2rem; }
 .danger-button:active { transform: translateY(2px); box-shadow: 0 2px 0 #7e2c28; }
 [data-theme="dark"] .danger-zone { border-color: #854843; background: color-mix(in srgb, var(--paper) 90%, #8d3732); }
 [data-theme="dark"] .danger-zone .eyebrow, [data-theme="dark"] .danger-zone h2 { color: #ffaaa1; }
+
+/* Game mode selection and the first multiplayer matchmaking lobby. */
+.game-mode-shell, .matchmaking-shell { max-width: 1060px; }
+.game-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.game-mode-card { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; padding: clamp(1.5rem, 3vw, 2.35rem); overflow: hidden; border: 1px solid var(--line); border-radius: 26px; background: var(--paper); box-shadow: var(--shadow); }
+.game-mode-card::after { content: ""; position: absolute; right: -45px; bottom: -65px; width: 180px; height: 180px; border-radius: 50%; background: #8fc57720; pointer-events: none; }
+.game-mode-card--online::after { background: #62b8d52b; }
+.game-mode-card .eyebrow { margin: 1rem 0 .35rem; }
+.game-mode-card h2 { font-size: clamp(1.8rem, 3vw, 2.45rem); }
+.game-mode-card > p:not(.eyebrow) { max-width: 480px; color: var(--muted); }
+.game-mode-card .primary-link { position: relative; z-index: 1; width: 100%; margin-top: auto; }
+.primary-link--blue { background: linear-gradient(#5aa7bd, #397e99); box-shadow: 0 4px 0 #2b657c, inset 0 1px 0 #ffffff30; }
+.game-mode-badge { align-self: flex-end; padding: .35rem .65rem; border-radius: 999px; background: var(--soft); color: var(--green); font-size: .67rem; font-weight: 800; }
+.game-mode-badge--online { color: #397e99; }
+.game-mode-icon { display: grid; place-items: center; width: 62px; height: 62px; margin-top: .4rem; border-radius: 20px; background: #dfeeda; color: var(--green); box-shadow: 0 4px 0 #c8ddc2; font-size: 1.8rem; }
+.game-mode-card--online .game-mode-icon { background: #dcedf4; color: #397e99; box-shadow: 0 4px 0 #c3dce6; }
+.game-mode-features { display: grid; gap: .55rem; margin: .4rem 0 1.8rem; padding: 0; color: var(--ink); font-size: .83rem; list-style: none; }
+.game-mode-features li { position: relative; padding-left: 1.4rem; }
+.game-mode-features li::before { content: "\2713"; position: absolute; left: 0; color: var(--green-bright); font-weight: 900; }
+.mode-back-link { display: flex; justify-content: center; margin-top: 1.5rem; }
+.matchmaking-card { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); overflow: hidden; border: 1px solid var(--line); border-radius: 28px; background: var(--paper); box-shadow: var(--shadow); }
+.matchmaking-visual { min-height: 420px; display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; background: radial-gradient(circle at center, #ffffffa6, transparent 58%), linear-gradient(145deg, #d9edf5, #e3efd8); }
+.matchmaking-player { display: grid; place-items: center; width: 86px; height: 86px; flex: 0 0 86px; border: 5px solid #fffdf5; border-radius: 28px; background: var(--green); color: #fff; box-shadow: 0 6px 0 #2a603d2e; font-family: var(--heading); font-size: 1.1rem; }
+.matchmaking-player--opponent { background: #4b91ad; }
+.matchmaking-path { display: flex; gap: .45rem; }
+.matchmaking-path i { width: 9px; height: 9px; border-radius: 50%; background: #6d918e; animation: queue-pulse 1.2s ease-in-out infinite; }
+.matchmaking-path i:nth-child(2) { animation-delay: .15s; }
+.matchmaking-path i:nth-child(3) { animation-delay: .3s; }
+.matchmaking-copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(1.5rem, 4vw, 3rem); }
+.matchmaking-copy h2 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+.matchmaking-copy > p:not(.eyebrow, .matchmaking-note) { color: var(--muted); }
+.queue-status, .match-found { margin-top: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; background: var(--soft); }
+.queue-status { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .75rem; }
+.queue-status strong { font-variant-numeric: tabular-nums; }
+.queue-spinner { width: 18px; height: 18px; border: 3px solid var(--line); border-top-color: var(--green); border-radius: 50%; animation: queue-spin .8s linear infinite; }
+.match-found span, .match-found small { display: block; color: var(--muted); font-size: .72rem; }
+.match-found strong { display: block; margin: .15rem 0; color: var(--green); font-family: var(--heading); font-size: 1.5rem; overflow-wrap: anywhere; }
+.matchmaking-actions { margin-top: 1.4rem; }
+.matchmaking-actions > * { flex: 1; }
+.matchmaking-actions button.secondary-link { font-family: inherit; }
+.matchmaking-note { margin: 1.25rem 0 0; color: var(--muted); font-size: .72rem; }
+.matchmaking-shell[data-queue-state="matched"] .matchmaking-player--opponent { background: var(--green-bright); }
+@keyframes queue-spin { to { transform: rotate(360deg); } }
+@keyframes queue-pulse { 0%, 100% { opacity: .3; transform: scale(.75); } 50% { opacity: 1; transform: scale(1); } }
 @media (max-width: 900px) {
+    .game-mode-grid, .matchmaking-card { grid-template-columns: 1fr; }
+    .matchmaking-visual { min-height: 230px; }
     .landing-hero { grid-template-columns: 1fr; gap: 2rem; }
     .feature-grid { grid-template-columns: 1fr; }
     .stats-grid, .map-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -338,6 +384,9 @@ section[id] { scroll-margin-top: 2rem; }
     .settings-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
+    .matchmaking-visual { gap: .5rem; padding: 1.2rem; }
+    .matchmaking-player { width: 68px; height: 68px; flex-basis: 68px; border-radius: 22px; }
+    .matchmaking-actions > * { width: 100%; }
     .portal-shell { width: calc(100% - 1.5rem); }
     .podium { gap: .45rem; }.podium-card { padding: 1rem .4rem; }.podium-card strong { font-size: .8rem; }
     .controls-list { grid-template-columns: 1fr; gap: .5rem; }.controls-list dd { margin-bottom: 1rem; }

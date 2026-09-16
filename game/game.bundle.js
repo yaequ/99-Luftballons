@@ -1190,7 +1190,7 @@ function updateUI() {
     button.disabled = !gameState.active || gameState.paused || gameState.player.gold < balloonData.cost;
     button.querySelector('.balloon-card__batch').textContent = `${CONFIG.SEND_BATCH_SIZE} Ballons`;
     button.querySelector('.balloon-card__price').textContent = balloonData.cost;
-    button.querySelector('.balloon-card__income').textContent = `+${balloonData.income}/s`;
+    button.querySelector('.balloon-card__income').textContent = `+${balloonData.income} Gold/s`;
   });
 }
 

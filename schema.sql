@@ -8,6 +8,30 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS multiplayer_matches (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    player_one_id INT UNSIGNED NOT NULL,
+    player_two_id INT UNSIGNED NOT NULL,
+    status ENUM('matched', 'active', 'completed', 'cancelled') NOT NULL DEFAULT 'matched',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    started_at DATETIME DEFAULT NULL,
+    ended_at DATETIME DEFAULT NULL,
+    CONSTRAINT fk_multiplayer_player_one FOREIGN KEY (player_one_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_multiplayer_player_two FOREIGN KEY (player_two_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_multiplayer_player_one (player_one_id, status),
+    INDEX idx_multiplayer_player_two (player_two_id, status),
+    INDEX idx_multiplayer_status_created (status, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS matchmaking_queue (
+    user_id INT UNSIGNED PRIMARY KEY,
+    joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_matchmaking_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_matchmaking_order (joined_at, user_id),
+    INDEX idx_matchmaking_last_seen (last_seen_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS game_results (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NOT NULL,

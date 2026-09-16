@@ -32,7 +32,7 @@ if ($user === false) {
     <main id="main-content" class="menu-card camp-card">
         <div class="camp-copy"><p class="eyebrow"><span class="status-dot"></span> Dein Basislager</p>
         <h1>Hallo, <?= htmlspecialchars($user['username'], ENT_QUOTES, 'UTF-8') ?>!</h1>
-        <p>Die Ballons sind unterwegs. Baue deine Verteidigung, beschütze deine Basis und fordere die KI heraus.</p>
+        <p>Die Ballons sind unterwegs. Baue deine Verteidigung, beschütze deine Basis und fordere die KI oder andere Spieler heraus.</p>
         <div class="button-row"><a class="primary-link" href="game.php">Spiel starten <span aria-hidden="true">→</span></a><a class="secondary-link" href="leaderboard.php">Bestenliste</a></div>
         <p class="camp-footnote"><a href="account.php">Meine Statistiken</a> · <a href="instructions.php">Spielanleitung</a></p></div>
         <figure class="map-preview">

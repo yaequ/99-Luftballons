@@ -62,6 +62,7 @@ $fixtures = [
         ['code'=>'veteran','name'=>'Veteran','description'=>'Test','icon'=>'assets/img/achievements/achievement-veteran.png','unlocked_at'=>null,'current'=>3,'target'=>25],
     ]],
     'history.php' => ['filter'=>'all', 'history'=>$first, 'best'=>10],
+    'game.php' => [],
     'leaderboard.php' => ['sort'=>'fastest', 'period'=>'all', 'userId'=>15, 'board'=>$board, 'entries'=>$board['entries'], 'mine'=>$board['mine']],
     'instructions.php' => [],
     'imprint.php' => [],
