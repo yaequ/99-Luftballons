@@ -1,4 +1,12 @@
-// Spielzustand, Eingaben, Runden, KI und Kampfberechnung.
+import { CONFIG } from './modules/config.js';
+import { ASSETS, whenImageReady } from './modules/assets.js';
+import { createInitialState } from './modules/state.js';
+import { mapPathPoint, canBuildAt } from './modules/building.js';
+import { buyAITower } from './modules/ai.js';
+import { createRenderer } from './modules/renderer.js';
+import * as RoundConfig from './rounds.js';
+
+/* 99 LUFTBALLONS – Vanilla HTML5 Canvas Tower Defense */
 
 const screens = {
   lobby: document.getElementById('screen-lobby'),
@@ -6,6 +14,7 @@ const screens = {
 };
 
 const ui = {
+  mapName: document.getElementById('map-name'),
   wave: document.getElementById('wave-counter'),
   p1Hp: document.getElementById('p1-hp'),
   p1Gold: document.getElementById('p1-gold'),
@@ -38,7 +47,7 @@ const canvasEnemy = document.getElementById('canvas-enemy');
 const ctxPlayer = canvasPlayer.getContext('2d');
 const ctxEnemy = canvasEnemy.getContext('2d');
 
-let mousePos = { x: 0, y: 0, onCanvas: false };
+const mousePos = { x: 0, y: 0, onCanvas: false };
 let animationFrameId = 0;
 let lastFrameTime = 0;
 let accumulator = 0;
@@ -46,59 +55,7 @@ let toastTimer = 0;
 let startPending = false;
 
 let gameState = createInitialState();
-
-function createSide(map) {
-  return {
-    map,
-    hp: 99,
-    gold: 100,
-    income: 5,
-    towers: [],
-    balloons: [],
-    sendQueue: [],
-    sendClock: 0,
-    projectiles: [],
-    pops: []
-  };
-}
-
-function createInitialState() {
-  const maps = Object.values(MAP_DATA);
-  const playerMap = maps[Math.floor(Math.random() * maps.length)];
-  const enemyMaps = maps.filter((map) => map !== playerMap);
-
-  return {
-    active: false,
-    paused: false,
-    resultSubmitted: false,
-    secondsElapsed: 0,
-    economyClock: 0,
-    selectedTowerType: null,
-    buildCursor: { x: 100, y: 40, active: false },
-    currentRound: 0,
-    roundStatus: 'ready',
-    spawnGroups: [],
-    spawnGroupIndex: 0,
-    spawnRemainingInGroup: 0,
-    spawnClock: 0,
-    remainingEnemies: 0,
-    intermissionRemaining: 0,
-    autoStart: true,
-    player: createSide(playerMap),
-    enemy: createSide(enemyMaps[Math.floor(Math.random() * enemyMaps.length)] || playerMap)
-  };
-}
-
-function whenImageReady(image) {
-  if (image.complete && image.naturalWidth > 0) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const source = image.dataset.src;
-    image.addEventListener('load', resolve, { once: true });
-    image.addEventListener('error', () => reject(new Error(source)), { once: true });
-    if (image.complete && image.getAttribute('src')) image.removeAttribute('src');
-    if (!image.getAttribute('src')) image.src = source;
-  });
-}
+const { renderSide, renderTowerPortraits, renderBalloonPortraits } = createRenderer(() => gameState, mousePos);
 
 async function loadMatchAssets() {
   const requiredAssets = [
@@ -118,11 +75,10 @@ async function loadMatchAssets() {
   renderBalloonPortraits();
 }
 
-document.getElementById('btn-pause').addEventListener('click', togglePause);
 
-document.getElementById('btn-return-lobby').addEventListener('click', returnToMenu);
+document.getElementById('btn-return-lobby').addEventListener('click', returnToHomepage);
 document.getElementById('btn-retry-load').addEventListener('click', () => startGame(true));
-document.getElementById('btn-cancel-load').addEventListener('click', returnToMenu);
+document.getElementById('btn-cancel-load').addEventListener('click', returnToHomepage);
 ui.startRound.addEventListener('click', () => {
   if (startPending || gameState.paused) return;
   if (!gameState.active && gameState.currentRound === 0) {
@@ -192,7 +148,6 @@ canvasPlayer.addEventListener('keydown', (event) => {
   } else if (event.key === 'Escape') {
     event.preventDefault();
     clearTowerSelection();
-
   }
 });
 
@@ -236,7 +191,7 @@ async function startGame(retry = false) {
   }
 }
 
-function returnToMenu() {
+function returnToHomepage() {
   gameState.active = false;
   cancelAnimationFrame(animationFrameId);
   window.location.assign('../menu.php');
@@ -294,37 +249,6 @@ function placeSelectedTower(x = mousePos.x, y = mousePos.y) {
   if (result === true) clearTowerSelection();
 }
 
-function mapY(map, y) {
-  return ((y - map.logicalCrop) / (CONFIG.CANVAS_HEIGHT - map.logicalCrop)) * CONFIG.CANVAS_HEIGHT;
-}
-
-function mapPathPoint(map, point) {
-  return {
-    x: (point.x / map.image.naturalWidth) * CONFIG.CANVAS_WIDTH,
-    y: ((point.y - map.hudCrop) / (map.image.naturalHeight - map.hudCrop)) * CONFIG.CANVAS_HEIGHT
-  };
-}
-
-function buildZonesForMap(map) {
-  return BUILD_ZONES.map((zone) => {
-    const top = mapY(map, zone.y);
-    const bottom = mapY(map, zone.y + zone.h);
-    return { x: zone.x, y: top, w: zone.w, h: bottom - top };
-  });
-}
-
-function pointInBuildZone(map, x, y) {
-  return buildZonesForMap(map).some((zone) => x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h);
-}
-
-function canBuildAt(side, type, x, y, isFree = false) {
-  const towerData = CONFIG.TOWERS[type];
-  if (!isFree && side.gold < towerData.cost) return 'gold';
-  if (!pointInBuildZone(side.map, x, y)) return 'zone';
-  if (side.towers.some((tower) => Math.hypot(tower.x - x, tower.y - y) < CONFIG.GRID_SIZE * 1.5)) return 'occupied';
-  return true;
-}
-
 function tryBuildTower(side, type, x, y, isFree = false) {
   const result = canBuildAt(side, type, x, y, isFree);
   if (result !== true) return result;
@@ -350,7 +274,6 @@ function sendBalloonToEnemy(type) {
   const balloonData = CONFIG.BALLOONS[type];
   if (!balloonData || !Number.isFinite(balloonData.cost)) return;
   if (gameState.player.gold < balloonData.cost) {
-
     return;
   }
 
@@ -359,7 +282,6 @@ function sendBalloonToEnemy(type) {
   gameState.enemy.sendQueue.push({ type, remaining: CONFIG.SEND_BATCH_SIZE });
   updateSentBalloons(gameState.enemy, 0);
   updateUI();
-
 }
 
 function updateSentBalloons(side, deltaTime) {
@@ -407,48 +329,8 @@ function startNextRound() {
   gameState.remainingEnemies = gameState.spawnGroups.reduce((sum, group) => sum + group.count, 0);
   gameState.intermissionRemaining = 0;
   gameState.roundStatus = 'spawning';
-  buyAITower();
+  buyAITower(gameState, tryBuildTower);
   updateUI();
-}
-
-function desiredAIFieldCount(round) {
-  if (round <= 0) return 0;
-  return Math.min(BUILD_ZONES.length, 1 + Math.floor(((round - 1) * (BUILD_ZONES.length - 1)) / 19));
-}
-
-function firstGridCenter(value) {
-  return Math.ceil((value - CONFIG.GRID_SIZE / 2) / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE + CONFIG.GRID_SIZE / 2;
-}
-
-function getAIBuildFields() {
-  return buildZonesForMap(gameState.enemy.map).map((zone, fieldIndex) => {
-    const isLarge = zone.w * zone.h >= 1800;
-    const targetCount = isLarge ? 5 + (fieldIndex % 4) : 3 + (fieldIndex % 4);
-    const spots = [];
-    for (let y = firstGridCenter(zone.y); y <= zone.y + zone.h; y += CONFIG.GRID_SIZE * 2) {
-      for (let x = firstGridCenter(zone.x); x <= zone.x + zone.w; x += CONFIG.GRID_SIZE * 2) spots.push({ x, y });
-    }
-    return { fieldIndex, isLarge, targetCount, spots: spots.slice(0, targetCount) };
-  });
-}
-
-function buyAITower() {
-  const targetFieldCount = desiredAIFieldCount(gameState.currentRound);
-  const priorities = gameState.currentRound >= 20 ? ['lens', 'fan', 'cactus'] : gameState.currentRound >= 10 ? ['fan', 'cactus'] : ['cactus'];
-  const fields = getAIBuildFields();
-
-  for (const field of fields.slice(0, targetFieldCount)) {
-    const existing = gameState.enemy.towers.filter((tower) => tower.fieldIndex === field.fieldIndex).length;
-    const missing = field.targetCount - existing;
-    if (missing <= 0) continue;
-    if (gameState.enemy.gold < missing * CONFIG.TOWERS.cactus.cost) break;
-
-    for (const spot of field.spots.slice(existing)) {
-      const type = priorities.find((candidate) => gameState.enemy.gold >= CONFIG.TOWERS[candidate].cost);
-      if (!type || tryBuildTower(gameState.enemy, type, spot.x, spot.y) !== true) break;
-      gameState.enemy.towers[gameState.enemy.towers.length - 1].fieldIndex = field.fieldIndex;
-    }
-  }
 }
 
 function finishRound() {
@@ -459,7 +341,7 @@ function finishRound() {
   }
   gameState.roundStatus = 'intermission';
   gameState.intermissionRemaining = CONFIG.INTERMISSION_SECONDS;
-  showToast(`Welle ${gameState.currentRound} geschafft!`);
+  showWaveCompleted();
 }
 
 function updateRound(deltaTime) {
@@ -518,11 +400,11 @@ function updateGame(deltaTime) {
     updateUI();
   }
 
-  updateSide(gameState.player, deltaTime);
-  updateSide(gameState.enemy, deltaTime);
+  updateSide(gameState.player, true, deltaTime);
+  updateSide(gameState.enemy, false, deltaTime);
 }
 
-function updateSide(side, deltaTime) {
+function updateSide(side, isPlayer, deltaTime) {
   for (let index = side.balloons.length - 1; index >= 0; index -= 1) {
     const balloon = side.balloons[index];
     const target = balloon.path[balloon.pathIndex + 1];
@@ -619,22 +501,31 @@ function checkGameOver() {
   else if (gameState.enemy.hp <= 0) endGame('win', 'Sieg', 'Der Gegner konnte deine Ballons nicht halten.');
 }
 
-function saveMatchResult(result) {
+async function saveMatchResult(result) {
   if (gameState.resultSubmitted) return;
   gameState.resultSubmitted = true;
 
-  fetch('../save-match.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      result,
-      duration_seconds: Math.round(gameState.secondsElapsed),
-      round_reached: gameState.currentRound
-    }),
-    keepalive: true
-  }).catch(() => {
-    // Die Spielanzeige bleibt auch bei einem Netzwerkfehler benutzbar.
-  });
+  try {
+    const response = await fetch('../save-match.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        result,
+        duration_seconds: Math.round(gameState.secondsElapsed),
+        round_reached: gameState.currentRound
+      }),
+      keepalive: true
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (!data.success) throw new Error('Match result was rejected');
+    if (Array.isArray(data.achievements) && data.achievements.length > 0) {
+      showToast(`${data.achievements.length} neues Abzeichen freigeschaltet!`, 5000);
+    }
+  } catch (error) {
+    gameState.resultSubmitted = false;
+    showToast('Ergebnis konnte nicht gespeichert werden.', 5000);
+  }
 }
 
 function endGame(result, title, message) {
@@ -704,15 +595,22 @@ function updateUI() {
   });
 }
 
-function showToast(message) {
-  ui.toast.textContent = message;
-  ui.toast.classList.add('active');
-  window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => {
-    ui.toast.classList.remove('active');
-    ui.toast.textContent = '';
-  }, 3000);
+function showWaveCompleted() {
+  showToast(`Welle ${gameState.currentRound} geschafft!`);
 }
+
+function showToast(message, duration = 3000) {
+  window.clearTimeout(toastTimer);
+  ui.toast.textContent = message;
+  ui.toast.hidden = false;
+  toastTimer = window.setTimeout(() => {
+    ui.toast.hidden = true;
+    ui.toast.textContent = '';
+  }, duration);
+}
+
+// The homepage links directly to this separate game page.
+startGame();
 
 function togglePause() {
   if (!gameState.active) return;
@@ -724,5 +622,4 @@ function togglePause() {
   if (!gameState.paused) animationFrameId = requestAnimationFrame(gameLoop);
 }
 
-// Nach dem Registrieren aller Eingaben die Spielansicht laden.
-startGame();
+document.getElementById('btn-pause').addEventListener('click', togglePause);

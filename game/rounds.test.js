@@ -1,8 +1,8 @@
 'use strict';
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { ROUND_DEFINITIONS, targetCount, expandRound, shuffledSpawnGroups } = require('./rounds.js');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { ROUND_DEFINITIONS, targetCount, expandRound, shuffledSpawnGroups } from './rounds.js';
 
 test('defines exactly 30 ordered rounds', () => {
   assert.equal(ROUND_DEFINITIONS.length, 30);

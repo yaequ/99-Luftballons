@@ -13,7 +13,7 @@ require_login();
   <meta name="theme-color" content="#111317">
   <title>99 Luftballons – KI-Duell</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=sidebar-menu-2">
+  <link rel="stylesheet" href="style.css?v=integrated-modules-1">
 </head>
 <body>
   <div id="game-app">
@@ -31,6 +31,15 @@ require_login();
         <nav class="game-navigation" aria-label="Spielmenü">
           <button class="pixel-btn" id="btn-pause" type="button" disabled aria-pressed="false">Pausieren</button>
           <span id="pause-status" role="status"></span>
+          <details class="home-menu pixel-frame" id="game-menu">
+            <summary>Menü</summary>
+            <div class="home-menu__buttons">
+              <a class="pixel-btn" href="../menu.php">Basislager</a>
+              <a class="pixel-btn" href="../leaderboard.php">Bestenliste</a>
+              <a class="pixel-btn" href="../instructions.php">Anleitung</a>
+              <a class="pixel-btn" href="../account.php">Account</a>
+            </div>
+          </details>
         </nav>
       <div class="game-frame pixel-frame">
         <header id="game-hud" class="hud">
@@ -67,7 +76,6 @@ require_login();
             <div class="map-stage"><canvas id="canvas-enemy" class="game-canvas" width="960" height="720" aria-label="Verteidigungskarte der KI"></canvas></div>
           </section>
           <p id="keyboard-help" class="sr-only">Nach der Turmauswahl bewegt man den Baucursor mit den Pfeiltasten. Enter platziert den Turm, Escape bricht ab.</p>
-          <div id="game-toast" class="game-toast" role="status" aria-live="polite"></div>
         </main>
 
         <footer id="game-controls" class="control-dock">
@@ -92,12 +100,10 @@ require_login();
       </div>
     </section>
 
-    <div id="modal-gameover" class="modal" role="dialog" aria-modal="true" aria-labelledby="gameover-title"><div class="modal-content pixel-frame"><p class="eyebrow">Match beendet</p><h2 id="gameover-title">Sieg!</h2><p id="gameover-message"></p><button id="btn-return-lobby" class="pixel-btn pixel-btn--primary" type="button">Zurück zum Menü</button></div></div>
-    <div id="modal-load-error" class="modal" role="dialog" aria-modal="true" aria-labelledby="load-error-title"><div class="modal-content pixel-frame"><p class="eyebrow">Ladefehler</p><h2 id="load-error-title">Asset fehlt</h2><p id="load-error-message"></p><div class="modal-actions"><button id="btn-retry-load" class="pixel-btn pixel-btn--primary" type="button">Erneut versuchen</button><button id="btn-cancel-load" class="pixel-btn" type="button">Zurück zum Menü</button></div></div></div>
+    <div id="modal-gameover" class="modal" role="dialog" aria-modal="true" aria-labelledby="gameover-title"><div class="modal-content pixel-frame"><p class="eyebrow">Match beendet</p><h2 id="gameover-title">Sieg!</h2><p id="gameover-message"></p><button id="btn-return-lobby" class="pixel-btn pixel-btn--primary" type="button">Zum Basislager</button></div></div>
+    <div id="modal-load-error" class="modal" role="dialog" aria-modal="true" aria-labelledby="load-error-title"><div class="modal-content pixel-frame"><p class="eyebrow">Ladefehler</p><h2 id="load-error-title">Asset fehlt</h2><p id="load-error-message"></p><div class="modal-actions"><button id="btn-retry-load" class="pixel-btn pixel-btn--primary" type="button">Erneut versuchen</button><button id="btn-cancel-load" class="pixel-btn" type="button">Zum Basislager</button></div></div></div>
   </div>
-  <script src="config.js?v=cleanup-1"></script>
-  <script src="rounds.js"></script>
-  <script src="rendering.js?v=cleanup-1"></script>
-  <script src="game.js?v=cleanup-1"></script>
+  <div id="game-toast" class="game-toast" role="status" aria-live="polite" hidden></div>
+  <script src="game.bundle.js?v=integrated-modules-1"></script>
 </body>
 </html>
