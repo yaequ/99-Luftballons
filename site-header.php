@@ -4,8 +4,8 @@ require_once __DIR__ . '/avatars.php';
 $headerLoggedIn = isset($_SESSION['user_id']);
 $headerPage = basename($_SERVER['SCRIPT_NAME'] ?? '');
 $headerLinks = $headerLoggedIn
-    ? ['menu.php' => 'Basislager', 'instructions.php' => 'Anleitung', 'leaderboard.php' => 'Bestenliste', 'history.php' => 'Meine Runden']
-    : ['instructions.php' => 'Anleitung', 'leaderboard.php' => 'Bestenliste', 'login.php' => 'Anmelden', 'register.php' => 'Mitspielen'];
+    ? ['index.php' => 'Startseite', 'menu.php' => 'Basislager', 'instructions.php' => 'Anleitung', 'leaderboard.php' => 'Bestenliste', 'history.php' => 'Meine Runden']
+    : ['index.php' => 'Startseite', 'instructions.php' => 'Anleitung', 'leaderboard.php' => 'Bestenliste', 'login.php' => 'Anmelden', 'register.php' => 'Mitspielen'];
 ?>
 <a class="skip-link" href="#main-content">Zum Inhalt</a>
 <header class="site-header">
