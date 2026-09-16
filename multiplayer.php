@@ -21,6 +21,7 @@ if ($user === false) {
 }
 
 $initialStatus = matchmaking_status($pdo, $userId, true);
+$playerAvatar = avatar_data($_SESSION['avatar_code'] ?? 'forest_guardian');
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -28,7 +29,7 @@ $initialStatus = matchmaking_status($pdo, $userId, true);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online-Lobby – 99 Luftballons</title>
-    <link rel="stylesheet" href="style.css?v=multiplayer-lobby-1">
+    <link rel="stylesheet" href="style.css?v=multiplayer-ready-1">
     <script src="theme.js?v=camp-1"></script>
 </head>
 <body>
@@ -44,9 +45,9 @@ $initialStatus = matchmaking_status($pdo, $userId, true);
         </header>
         <section class="matchmaking-card" aria-labelledby="matchmaking-title">
             <div class="matchmaking-visual" aria-hidden="true">
-                <span class="matchmaking-player">DU</span>
+                <span class="matchmaking-player"><img src="<?= htmlspecialchars($playerAvatar['image'], ENT_QUOTES, 'UTF-8') ?>" alt="" width="512" height="512"><small>DU</small></span>
                 <span class="matchmaking-path"><i></i><i></i><i></i></span>
-                <span class="matchmaking-player matchmaking-player--opponent">?</span>
+                <span class="matchmaking-player matchmaking-player--opponent"><img id="opponent-avatar" src="assets/img/avatars/avatar-forest-guardian.png" alt="" width="512" height="512"><small>?</small></span>
             </div>
             <div class="matchmaking-copy">
                 <p class="eyebrow" id="matchmaking-kicker">Warteschlange</p>
@@ -62,16 +63,25 @@ $initialStatus = matchmaking_status($pdo, $userId, true);
                     <strong id="opponent-name">–</strong>
                     <small id="match-number"></small>
                 </div>
+                <div class="ready-room" id="ready-room" hidden>
+                    <div class="ready-player"><span>Du</span><strong id="your-ready-state">Nicht bereit</strong></div>
+                    <div class="ready-player"><span id="ready-opponent-name">Gegner</span><strong id="opponent-ready-state">Nicht bereit</strong></div>
+                </div>
+                <div class="match-countdown" id="match-countdown" hidden aria-live="assertive">
+                    <span>Das Match startet in</span>
+                    <strong id="countdown-value">4</strong>
+                </div>
                 <div class="button-row matchmaking-actions">
                     <button class="primary-button" id="join-queue" type="button">Gegner suchen</button>
+                    <button class="primary-button" id="ready-match" type="button" hidden>Ich bin bereit</button>
                     <button class="secondary-link" id="leave-queue" type="button" hidden>Suche verlassen</button>
                     <a class="secondary-link" href="game.php">Spielmodus wechseln</a>
                 </div>
-                <p class="matchmaking-note">Das Matchmaking ist bereits funktionsfähig. Das eigentliche Live-Duell wird im nächsten Paket angeschlossen.</p>
+                <p class="matchmaking-note">Wenn beide Spieler bereit sind, startet für euch derselbe Countdown.</p>
             </div>
         </section>
     </main>
     <?php require __DIR__ . '/site-footer.php'; ?>
-    <script src="matchmaking.js?v=matchmaking-1"></script>
+    <script src="matchmaking.js?v=matchmaking-ready-1"></script>
 </body>
 </html>

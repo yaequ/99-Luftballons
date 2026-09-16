@@ -37,6 +37,8 @@ try {
     $action = is_string($_POST['action'] ?? null) ? $_POST['action'] : '';
     if ($action === 'join') {
         $result = join_matchmaking($pdo, $userId);
+    } elseif ($action === 'ready') {
+        $result = ready_multiplayer_match($pdo, $userId);
     } elseif ($action === 'leave') {
         $result = leave_matchmaking($pdo, $userId);
     } else {
