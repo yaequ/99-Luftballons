@@ -13,7 +13,7 @@ require_login();
   <meta name="theme-color" content="#dff2f8">
   <title>99 Luftballons – KI-Duell</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=game-ui-complete-1">
+  <link rel="stylesheet" href="style.css?v=game-ui-polish-2">
 </head>
 <body>
   <div id="game-app">
@@ -43,10 +43,8 @@ require_login();
           <a class="game-brand" href="../index.php" aria-label="99 Luftballons – Startseite"><img src="../assets/img/branding/logo.png" alt="99 Luftballons" width="1024" height="512"></a>
           <div class="topbar-actions">
             <div class="hud__time"><span>Zeit</span><strong id="match-timer">00:00</strong></div>
-            <button class="pixel-btn topbar-button" id="btn-pause" type="button" disabled aria-pressed="false">Pausieren</button>
             <button id="btn-toggle-controls" class="view-btn control-toggle" type="button" aria-expanded="true" aria-controls="game-controls">Interface ausblenden</button>
           </div>
-          <span id="pause-status" role="status"></span>
         </div>
 
         <header id="game-hud" class="hud">
@@ -61,7 +59,7 @@ require_login();
           <section class="round-focus" aria-label="Rundeninformationen">
             <div class="round-focus__title"><span>Runde</span><strong id="wave-counter">0/30</strong><small id="round-state">Bereit</small></div>
             <div class="round-focus__details">
-              <div class="round-summary"><span>Verbleibend</span><strong id="remaining-enemies">0</strong></div>
+              <div class="round-summary"><span>Ballons verbleibend</span><strong id="remaining-enemies">0</strong></div>
               <div class="round-summary round-summary--wide"><span>Nächste Runde</span><strong id="next-wave-preview">100 rote Ballons</strong><small id="round-countdown">Warte auf Start</small></div>
             </div>
           </section>
@@ -87,7 +85,7 @@ require_login();
             </footer>
           </section>
           <section class="map-panel map-panel--enemy" aria-labelledby="enemy-map-title">
-            <header class="map-panel__header"><div><span>KI-Karte</span><strong id="enemy-map-title">Waldweg</strong></div><span class="map-panel__readonly">Beobachten</span></header>
+            <header class="map-panel__header"><div><span>KI-Karte</span><strong id="enemy-map-title">Waldweg</strong></div><span class="map-panel__readonly">Angreifen</span></header>
             <div class="map-stage"><canvas id="canvas-enemy" class="game-canvas" width="960" height="720" aria-label="Verteidigungskarte der KI"></canvas></div>
             <footer class="map-health map-health--enemy">
               <div class="map-health__label"><span>KI-Lebenspunkte</span><strong id="p2-hp">99 / 99</strong></div>
@@ -101,6 +99,8 @@ require_login();
           <div class="round-toolbar" aria-label="Rundensteuerung">
             <label class="auto-start-control"><input id="input-auto-start" type="checkbox" checked><span>Auto-Start</span></label>
             <button id="btn-start-round" class="pixel-btn pixel-btn--round" type="button">Spiel starten</button>
+            <button class="pixel-btn round-pause-button" id="btn-pause" type="button" disabled aria-pressed="false">Pausieren</button>
+            <span id="pause-status" class="sr-only" role="status"></span>
           </div>
 
           <footer class="control-dock">

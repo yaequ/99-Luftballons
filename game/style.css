@@ -57,9 +57,6 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
 .hud__time { min-width: 86px; padding: 7px 12px; border-radius: 14px; background: var(--paper-soft); text-align: center; }
 .hud__time span { display: block; color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
 .hud__time strong { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
-#pause-status { position: absolute; right: 18px; bottom: -25px; z-index: 8; color: var(--green); font-size: 12px; font-weight: 800; }
-#pause-status:empty { display: none; }
-
 .home-menu { position: relative; border: 0; border-radius: 14px; box-shadow: none; }
 .home-menu summary { min-height: 46px; display: flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper-soft); color: var(--ink); cursor: pointer; font-weight: 900; list-style: none; }
 .home-menu summary::-webkit-details-marker { display: none; }
@@ -78,13 +75,12 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
 /* Match overview */
 .hud { display: grid; grid-template-columns: minmax(230px, .9fr) minmax(400px, 1.45fr) minmax(230px, .9fr); gap: 14px; padding: 14px; background: linear-gradient(180deg, #f7f8ef, #eef3e6); }
 .combatant-card, .round-focus { min-width: 0; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); }
-.combatant-card { display: grid; align-content: center; gap: 12px; padding: 16px 18px; }
+.combatant-card { display: grid; align-content: center; gap: 10px; padding: 14px 16px; text-align: center; }
 .combatant-card > p { margin: 0; color: var(--green); font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
-.combatant-card--enemy { text-align: right; }
 .combatant-card--enemy > p { color: var(--red); }
 .combatant-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.combatant-metrics--enemy { grid-template-columns: minmax(0, 1fr); }
-.hud__metric { min-width: 0; }
+.combatant-metrics--enemy { width: min(180px, 100%); grid-template-columns: minmax(0, 1fr); justify-self: center; }
+.hud__metric { min-width: 0; padding: 7px 9px; border-radius: 12px; background: var(--paper-soft); text-align: center; }
 .hud__metric span { display: block; margin-bottom: 2px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 .hud__metric strong { display: block; overflow: hidden; font-family: var(--heading); font-size: clamp(15px, 1.7vw, 22px); text-overflow: ellipsis; white-space: nowrap; }
 .hud__metric--gold strong { color: #a86c12; }
@@ -100,14 +96,15 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
 .round-summary + .round-summary { border-left: 1px solid var(--line); }
 .round-summary span { color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .round-summary strong { display: block; overflow: hidden; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }
-.round-summary--wide strong { color: var(--blue); font-size: 12px; }
-.round-summary small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+.round-summary--wide strong { color: var(--blue); font-size: clamp(14px, 1.35vw, 17px); }
+.round-summary small { margin-top: 4px; color: var(--muted); font-size: 11px; }
 
 /* Temporary round controls; the action-focused dock follows in package 2. */
-.round-toolbar { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 11px 16px; border-top: 1px solid #ffffff; border-bottom: 1px solid var(--line); background: var(--paper); }
-.auto-start-control { min-height: 46px; display: flex; align-items: center; gap: 9px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper-soft); color: var(--green); font-size: 12px; font-weight: 900; cursor: pointer; }
+.round-toolbar { display: grid; grid-template-columns: 150px minmax(250px, 1fr) 150px; align-items: stretch; justify-content: center; gap: 12px; padding: 11px 16px; border-top: 1px solid #ffffff; border-bottom: 1px solid var(--line); background: var(--paper); }
+.auto-start-control { min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper-soft); color: var(--green); font-size: 12px; font-weight: 900; cursor: pointer; }
 .auto-start-control input { width: 18px; height: 18px; accent-color: var(--green); }
 .pixel-btn--round { min-width: 250px; color: #fff; background: linear-gradient(#58a564, #387c4d); border-color: #347349; box-shadow: 0 4px 0 #28623d, inset 0 1px 0 #ffffff55; }
+.round-pause-button { width: 100%; min-height: 46px; }
 
 /* Maps */
 .maps-grid { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 14px; background: #eef4e8; }
@@ -178,10 +175,8 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
 .pixel-btn--primary { color: #fff; background: var(--green); border-color: #28623d; }
 
 @media (max-width: 1120px) {
-  .hud { grid-template-columns: 1fr 1.25fr; }
-  .combatant-card--enemy { grid-column: 1 / -1; }
-  .combatant-card--enemy, .combatant-metrics--enemy { text-align: left; }
-  .combatant-metrics--enemy { grid-template-columns: minmax(0, 180px); }
+  .hud { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .round-focus { grid-column: 1 / -1; grid-row: 1; }
   .control-dock { grid-template-columns: 1fr; }
   .control-panel + .control-panel { border-top: 1px solid var(--line); border-left: 0; }
 }
@@ -193,8 +188,6 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
   .game-brand { width: 155px; }
   .topbar-actions { grid-column: 1 / -1; justify-content: stretch; }
   .topbar-actions > * { flex: 1; }
-  .hud { grid-template-columns: 1fr; }
-  .combatant-card--enemy { grid-column: auto; }
   .maps-grid { grid-template-columns: 1fr; }
   .round-focus { grid-template-columns: minmax(105px, .4fr) 1fr; }
   .map-health { grid-template-columns: minmax(0, 1fr); gap: 7px; }
@@ -209,11 +202,13 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
   .hud__time { min-width: 72px; }
   .control-toggle { flex-basis: 100% !important; }
   .hud { padding: 8px; }
+  .hud { grid-template-columns: 1fr; }
+  .round-focus { grid-column: auto; }
   .round-focus { grid-template-columns: 1fr; }
   .round-focus__title { min-height: 100px; }
   .round-focus__details { grid-template-columns: 90px 1fr; }
   .combatant-metrics { gap: 7px; }
-  .round-toolbar { align-items: stretch; flex-direction: column; }
+  .round-toolbar { grid-template-columns: 1fr; }
   .pixel-btn--round { min-width: 0; }
   .maps-grid { gap: 10px; padding: 8px; }
   .map-panel__header { min-height: 52px; }
