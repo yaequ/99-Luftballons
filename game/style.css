@@ -64,6 +64,7 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
 .home-menu summary { min-height: 46px; display: flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper-soft); color: var(--ink); cursor: pointer; font-weight: 900; list-style: none; }
 .home-menu summary::-webkit-details-marker { display: none; }
 .home-menu summary span { color: var(--green); font-size: 19px; }
+.home-menu[open] summary { border-color: var(--green); background: var(--green-soft); }
 .home-menu__buttons { position: absolute; top: calc(100% + 9px); left: 0; z-index: 30; width: 210px; display: grid; gap: 7px; padding: 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: var(--shadow); }
 
 .pixel-btn, .view-btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 9px 15px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper-soft); color: var(--ink); box-shadow: 0 3px 0 var(--line); cursor: pointer; font-weight: 900; text-decoration: none; transition: transform .15s, filter .15s, box-shadow .15s; }
@@ -81,8 +82,8 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
 .combatant-card > p { margin: 0; color: var(--green); font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
 .combatant-card--enemy { text-align: right; }
 .combatant-card--enemy > p { color: var(--red); }
-.combatant-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.combatant-metrics--enemy { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.combatant-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.combatant-metrics--enemy { grid-template-columns: minmax(0, 1fr); }
 .hud__metric { min-width: 0; }
 .hud__metric span { display: block; margin-bottom: 2px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 .hud__metric strong { display: block; overflow: hidden; font-family: var(--heading); font-size: clamp(15px, 1.7vw, 22px); text-overflow: ellipsis; white-space: nowrap; }
@@ -125,10 +126,22 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
 .map-tip { position: absolute; left: 14px; bottom: 14px; width: min(340px, calc(100% - 28px)); display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #ffffff99; border-radius: 13px; background: #233f43e8; color: #fff; box-shadow: 0 6px 20px #102c3038; font-size: 12px; line-height: 1.35; pointer-events: none; }
 .map-tip__step { flex: 0 0 28px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: #bde8b8; color: #28583a; font-weight: 900; }
 
-/* Existing controls stay functional until package 2 redesigns their hierarchy. */
-.control-dock { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, .8fr); border-top: 1px solid var(--line); border-radius: 0 0 28px 28px; background: var(--paper); }
-.game-frame.controls-collapsed .control-dock { display: none; }
-.control-panel { min-width: 0; padding: 14px; }
+/* Life remains attached to the map it belongs to. */
+.map-health { display: grid; grid-template-columns: auto minmax(130px, 1fr); align-items: center; gap: 14px; min-height: 66px; padding: 10px 15px 12px; border-top: 1px solid var(--line); background: #fffef9; }
+.map-health__label { display: flex; align-items: baseline; gap: 9px; white-space: nowrap; }
+.map-health__label span { color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.map-health__label strong { color: var(--red); font-family: var(--heading); font-size: 18px; font-variant-numeric: tabular-nums; }
+.health-meter { position: relative; height: 15px; overflow: hidden; border: 1px solid #d9b6b0; border-radius: 999px; background: #f4ddd9; box-shadow: inset 0 2px 4px #8a3d3420; }
+.health-meter__fill { position: absolute; inset: 0 auto 0 0; width: 100%; border-radius: inherit; background: linear-gradient(90deg, #bb423e, #e7655d); box-shadow: inset 0 1px 0 #ffffff55; transition: width .45s cubic-bezier(.22, .8, .25, 1); }
+.health-meter.is-critical .health-meter__fill { animation: health-warning 1s ease-in-out infinite alternate; }
+@keyframes health-warning { to { filter: brightness(1.25) saturate(1.2); } }
+
+/* The most-used controls form one centered action dock. */
+.action-zone { max-height: 2200px; overflow: hidden; padding: 2px 14px 14px; border-radius: 0 0 28px 28px; background: var(--paper); opacity: 1; transform: translateY(0); transform-origin: top; transition: max-height .28s ease, opacity .18s ease, transform .28s ease, padding .28s ease; }
+.game-frame.controls-collapsed .action-zone { max-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; transform: translateY(-8px); pointer-events: none; }
+.action-zone .round-toolbar { width: min(760px, 100%); margin: 0 auto; border: 0; }
+.control-dock { width: min(1240px, 100%); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin: 0 auto; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); box-shadow: 0 5px 0 #d6e2d4; }
+.control-panel { min-width: 0; padding: 18px; }
 .control-panel + .control-panel { border-left: 1px solid var(--line); }
 .panel-heading { min-height: 38px; display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .panel-heading h2 { margin: 0; font-family: var(--heading); font-size: 19px; }
@@ -139,13 +152,13 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
 .action-card, .balloon-card { min-width: 0; border: 1px solid var(--line); border-radius: 15px; background: var(--paper-soft); color: var(--ink); cursor: pointer; transition: transform .15s, border-color .15s, filter .15s; }
 .action-card:hover, .balloon-card:hover { transform: translateY(-2px); border-color: var(--green-bright); }
 .action-card:disabled, .balloon-card:disabled { cursor: not-allowed; filter: grayscale(.8) opacity(.55); transform: none; }
-.action-card { min-height: 104px; display: grid; grid-template-columns: 78px minmax(0, 1fr); grid-template-rows: auto auto 1fr; column-gap: 10px; padding: 9px; text-align: left; }
+.action-card { min-height: 112px; display: grid; grid-template-columns: 82px minmax(0, 1fr); grid-template-rows: auto auto 1fr; column-gap: 11px; padding: 10px; text-align: left; }
 .action-card.selected { border-color: var(--green); box-shadow: inset 0 0 0 2px var(--green); }
-.action-card__portrait { grid-row: 1 / -1; width: 78px; height: 68px; align-self: center; border-radius: 11px; background: #e7ede1; image-rendering: pixelated; }
+.action-card__portrait { grid-row: 1 / -1; width: 82px; height: 72px; align-self: center; border-radius: 11px; background: #e7ede1; image-rendering: pixelated; }
 .action-card__name { overflow: hidden; font-size: 13px; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
 .action-card__meta { color: var(--muted); font-size: 9px; }
 .action-card__cost { align-self: end; color: #a86c12; font-size: 12px; font-weight: 900; }
-.balloon-card { min-height: 86px; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 8px; text-align: center; }
+.balloon-card { min-height: 112px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px; text-align: center; }
 .balloon-card__portrait { width: 46px; height: 52px; image-rendering: pixelated; }
 .balloon-card strong, .balloon-card small { display: block; }
 .balloon-card strong { font-size: 12px; }
@@ -168,7 +181,7 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
   .hud { grid-template-columns: 1fr 1.25fr; }
   .combatant-card--enemy { grid-column: 1 / -1; }
   .combatant-card--enemy, .combatant-metrics--enemy { text-align: left; }
-  .combatant-metrics--enemy { grid-template-columns: repeat(2, minmax(0, 180px)); }
+  .combatant-metrics--enemy { grid-template-columns: minmax(0, 180px); }
   .control-dock { grid-template-columns: 1fr; }
   .control-panel + .control-panel { border-top: 1px solid var(--line); border-left: 0; }
 }
@@ -184,6 +197,7 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
   .combatant-card--enemy { grid-column: auto; }
   .maps-grid { grid-template-columns: 1fr; }
   .round-focus { grid-template-columns: minmax(105px, .4fr) 1fr; }
+  .map-health { grid-template-columns: minmax(0, 1fr); gap: 7px; }
 }
 
 @media (max-width: 560px) {
@@ -207,6 +221,7 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
   .panel-hint { text-align: left; }
   .action-grid--towers { grid-template-columns: 1fr; }
   .action-grid--balloons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .action-zone { padding-right: 8px; padding-left: 8px; }
   .modal-actions { flex-direction: column; }
 }
 

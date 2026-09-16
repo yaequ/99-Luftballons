@@ -21,6 +21,10 @@ const ui = {
   p1Income: document.getElementById('p1-income'),
   p2Hp: document.getElementById('p2-hp'),
   p2Gold: document.getElementById('p2-gold'),
+  p1HealthMeter: document.getElementById('p1-health-meter'),
+  p1HealthFill: document.getElementById('p1-health-fill'),
+  p2HealthMeter: document.getElementById('p2-health-meter'),
+  p2HealthFill: document.getElementById('p2-health-fill'),
   timer: document.getElementById('match-timer'),
   lobbyStatus: document.getElementById('lobby-status'),
   mapTip: document.getElementById('map-tip'),
@@ -38,7 +42,8 @@ const ui = {
   roundCountdown: document.getElementById('round-countdown'),
   roundState: document.getElementById('round-state'),
   playerMapTitle: document.getElementById('player-map-title'),
-  enemyMapTitle: document.getElementById('enemy-map-title')
+  enemyMapTitle: document.getElementById('enemy-map-title'),
+  gameMenu: document.getElementById('game-menu')
 };
 
 const gameFrame = document.querySelector('.game-frame');
@@ -126,8 +131,17 @@ document.addEventListener('visibilitychange', () => {
 });
 
 document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && ui.gameMenu.open) {
+    ui.gameMenu.removeAttribute('open');
+    ui.gameMenu.querySelector('summary').focus();
+    return;
+  }
   if (event.key.toLowerCase() !== 'i' || event.target.matches('input, textarea')) return;
   setControlsExpanded(gameFrame.classList.contains('controls-collapsed'));
+});
+
+document.addEventListener('pointerdown', (event) => {
+  if (ui.gameMenu.open && !ui.gameMenu.contains(event.target)) ui.gameMenu.removeAttribute('open');
 });
 
 canvasPlayer.addEventListener('keydown', (event) => {
@@ -551,10 +565,10 @@ function updateUI() {
   document.getElementById('pause-status').textContent = gameState.paused ? 'Spiel pausiert' : '';
   gameFrame.classList.toggle('is-paused', gameState.paused);
   ui.autoStart.disabled = gameState.paused;
-  ui.p1Hp.textContent = `${gameState.player.hp} HP`;
+  updateHealthDisplay(gameState.player.hp, ui.p1Hp, ui.p1HealthMeter, ui.p1HealthFill);
   ui.p1Gold.textContent = Math.floor(gameState.player.gold);
   ui.p1Income.textContent = `+${gameState.player.income}/s`;
-  ui.p2Hp.textContent = `${gameState.enemy.hp} HP`;
+  updateHealthDisplay(gameState.enemy.hp, ui.p2Hp, ui.p2HealthMeter, ui.p2HealthFill);
   ui.p2Gold.textContent = Math.floor(gameState.enemy.gold);
 
   ui.wave.textContent = `${gameState.currentRound}/${CONFIG.WAVES}`;
@@ -593,6 +607,16 @@ function updateUI() {
     button.disabled = !gameState.active || gameState.paused || gameState.player.gold < balloonData.cost;
     button.querySelector('small').textContent = `${CONFIG.SEND_BATCH_SIZE} Ballons · ${balloonData.cost} G · +${balloonData.income}/s`;
   });
+}
+
+function updateHealthDisplay(value, label, meter, fill) {
+  const maximum = 99;
+  const health = Math.max(0, Math.min(maximum, Math.round(value)));
+  const percentage = health / maximum * 100;
+  label.textContent = `${health} / ${maximum}`;
+  meter.setAttribute('aria-valuenow', String(health));
+  meter.classList.toggle('is-critical', health > 0 && health <= 30);
+  fill.style.width = `${percentage}%`;
 }
 
 function showWaveCompleted() {
