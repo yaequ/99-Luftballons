@@ -13,7 +13,7 @@ require_login();
   <meta name="theme-color" content="#dff2f8">
   <title>99 Luftballons – KI-Duell</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=game-ui-polish-2">
+  <link rel="stylesheet" href="style.css?v=game-ui-polish-3">
 </head>
 <body>
   <div id="game-app">
@@ -51,7 +51,7 @@ require_login();
           <section class="combatant-card combatant-card--player" aria-label="Dein Spielstand">
             <p>Deine Basis</p>
             <div class="combatant-metrics">
-              <span class="hud__metric hud__metric--gold"><span>Gold</span><strong id="p1-gold">100</strong></span>
+              <span class="hud__metric hud__metric--gold"><span>Gold</span><span class="hud__value hud__value--gold"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong id="p1-gold">100</strong></span></span>
               <span class="hud__metric"><span>Einkommen</span><strong id="p1-income">+10/s</strong></span>
             </div>
           </section>
@@ -67,7 +67,8 @@ require_login();
           <section class="combatant-card combatant-card--enemy" aria-label="Spielstand der KI">
             <p>KI-Basis</p>
             <div class="combatant-metrics combatant-metrics--enemy">
-              <span class="hud__metric hud__metric--gold"><span>Gold</span><strong id="p2-gold">100</strong></span>
+              <span class="hud__metric hud__metric--gold"><span>Gold</span><span class="hud__value hud__value--gold"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong id="p2-gold">100</strong></span></span>
+              <span class="hud__metric"><span>Einkommen</span><strong id="p2-income">+5/s</strong></span>
             </div>
           </section>
         </header>
@@ -130,6 +131,6 @@ require_login();
     <div id="modal-load-error" class="modal" role="dialog" aria-modal="true" aria-labelledby="load-error-title"><div class="modal-content pixel-frame"><p class="eyebrow">Ladefehler</p><h2 id="load-error-title">Asset fehlt</h2><p id="load-error-message"></p><div class="modal-actions"><button id="btn-retry-load" class="pixel-btn pixel-btn--primary" type="button">Erneut versuchen</button><button id="btn-cancel-load" class="pixel-btn" type="button">Zum Basislager</button></div></div></div>
   </div>
   <div id="game-toast" class="game-toast" role="status" aria-live="polite" hidden></div>
-  <script src="game.bundle.js?v=game-ui-complete-1"></script>
+  <script src="game.bundle.js?v=game-ui-polish-3"></script>
 </body>
 </html>

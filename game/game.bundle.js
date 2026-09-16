@@ -602,6 +602,7 @@ const ui = {
   p1Income: document.getElementById('p1-income'),
   p2Hp: document.getElementById('p2-hp'),
   p2Gold: document.getElementById('p2-gold'),
+  p2Income: document.getElementById('p2-income'),
   p1HealthMeter: document.getElementById('p1-health-meter'),
   p1HealthFill: document.getElementById('p1-health-fill'),
   p2HealthMeter: document.getElementById('p2-health-meter'),
@@ -1151,10 +1152,11 @@ function updateUI() {
   ui.p1Income.textContent = `+${gameState.player.income}/s`;
   updateHealthDisplay(gameState.enemy.hp, ui.p2Hp, ui.p2HealthMeter, ui.p2HealthFill);
   ui.p2Gold.textContent = Math.floor(gameState.enemy.gold);
+  ui.p2Income.textContent = `+${gameState.enemy.income}/s`;
 
   ui.wave.textContent = `${gameState.currentRound}/${CONFIG.WAVES}`;
   ui.remainingEnemies.textContent = gameState.remainingEnemies;
-  const labels = { ready: 'Bereit', spawning: 'Angriff läuft', clearing: 'Restliche Gegner', intermission: 'Rundenpause', completed: 'Abgeschlossen' };
+  const labels = { ready: 'Bereit', spawning: 'Angriff läuft', clearing: '', intermission: 'Rundenpause', completed: 'Abgeschlossen' };
   ui.roundState.textContent = labels[gameState.roundStatus];
   const nextDefinition = RoundConfig.ROUND_DEFINITIONS[gameState.currentRound];
   ui.nextWavePreview.textContent = nextDefinition ? formatRound(nextDefinition) : 'Keine weitere Runde';
