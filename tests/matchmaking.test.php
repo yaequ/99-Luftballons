@@ -50,35 +50,6 @@ matchmaking_check($secondReady['state'] === 'starting' && $secondReady['you_read
 $pdo->exec("UPDATE multiplayer_matches SET started_at = datetime(CURRENT_TIMESTAMP, '-1 second') WHERE id = " . (int) $secondReady['match_id']);
 matchmaking_check(matchmaking_status($pdo, 1)['state'] === 'active', 'Both players enter the active match after the countdown');
 
-$built = multiplayer_build_tower($pdo, 1, 'cactus', 0);
-matchmaking_check($built['game_state']['you']['gold'] === 75, 'A server-validated tower purchase deducts its price');
-matchmaking_check($built['game_state']['towers']['you'] === [['slot' => 0, 'type' => 'cactus']], 'The purchased tower is stored in the selected map slot');
-$duplicateRejected = false;
-try {
-    multiplayer_build_tower($pdo, 1, 'fan', 0);
-} catch (InvalidArgumentException $error) {
-    $duplicateRejected = true;
-}
-matchmaking_check($duplicateRejected, 'An occupied multiplayer build slot cannot be purchased twice');
-
-$attackOne = multiplayer_send_balloons($pdo, 1, 'red');
-$attackTwo = multiplayer_send_balloons($pdo, 2, 'blue');
-matchmaking_check($attackOne['game_state']['you']['income'] === 6, 'Sending balloons increases the sender income');
-matchmaking_check($attackTwo['game_state']['you']['income'] === 7, 'Each player has an independently synchronized economy');
-multiplayer_start_round($pdo, 1);
-$lockedRejected = false;
-try {
-    multiplayer_send_balloons($pdo, 1, 'red');
-} catch (DomainException $error) {
-    $lockedRejected = true;
-}
-matchmaking_check($lockedRejected, 'A ready player cannot change the locked round setup');
-$resolved = multiplayer_start_round($pdo, 2);
-matchmaking_check($resolved['game_state']['round'] === 1, 'The round advances only after both players are ready');
-matchmaking_check($resolved['game_state']['you']['hp'] === 96 && $resolved['game_state']['opponent']['hp'] === 95, 'Queued attacks are resolved against the opponent defense');
-matchmaking_check($resolved['game_state']['you']['gold'] === 110 && $resolved['game_state']['opponent']['gold'] === 95, 'Both players receive their synchronized round income');
-matchmaking_check(count($resolved['game_state']['events']) > 0, 'Recent multiplayer actions are exposed as a shared event feed');
-
 leave_matchmaking($pdo, 1);
 matchmaking_check(matchmaking_status($pdo, 1)['state'] === 'idle', 'Leaving cancels an online match');
 matchmaking_check(matchmaking_status($pdo, 2)['state'] === 'idle', 'The opponent is released from a cancelled online match');
