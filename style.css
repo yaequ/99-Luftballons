@@ -252,6 +252,7 @@ form > .primary-button { margin-top: .8rem; width: 100%; }
 .result-badge { display: inline-block; font-size: .75rem; font-weight: 700; padding: .2rem .5rem; border-radius: 8px; }
 .result-win { color: #285d3c; background: #e5f3de; }
 .result-loss { color: #813c39; background: #ffeae3; }
+.result-draw { color: #6f5818; background: #fff2c6; }
 .pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; font-size: .85rem; }
 .guide-nav { margin-bottom: 2rem; }
 .tower-price { color: var(--green); font-size: .8rem; font-weight: 800; }

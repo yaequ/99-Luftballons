@@ -14,7 +14,10 @@ header('Cache-Control: no-store');
 
 try {
     $userId = (int) $_SESSION['user_id'];
-    ensure_multiplayer_sync_tables($pdo);
+    if ((int) ($_SESSION['multiplayer_sync_schema_version'] ?? 0) < 4) {
+        ensure_multiplayer_sync_tables($pdo);
+        $_SESSION['multiplayer_sync_schema_version'] = 4;
+    }
     $input = $_SERVER['REQUEST_METHOD'] === 'POST' ? $_POST : $_GET;
     $matchId = filter_var($input['match_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     $afterId = filter_var($input['after'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
@@ -55,6 +58,7 @@ try {
         'events' => multiplayer_sync_events($pdo, (int) $matchId, $eventCursor),
         'ready' => multiplayer_readiness($pdo, (int) $matchId, $side),
         'outcome' => multiplayer_outcome($pdo, (int) $matchId),
+        'result_saved' => multiplayer_result_saved($pdo, (int) $matchId, $userId),
         'server_time' => round(microtime(true) * 1000),
     ], JSON_THROW_ON_ERROR);
 } catch (InvalidArgumentException | DomainException $error) {

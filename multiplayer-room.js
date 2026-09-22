@@ -13,6 +13,7 @@
     const connectionLabel = document.getElementById('connection-label');
     const localEngine = shell.dataset.localEngine === 'true';
     let pollTimer = 0;
+    let invalidPolls = 0;
 
     function updateHealth(prefix, value) {
         const health = Math.max(0, Math.min(99, Number(value) || 0));
@@ -39,9 +40,13 @@
             const status = await response.json();
             if (!response.ok) throw new Error();
             if (!['starting', 'active'].includes(status.state) || Number(status.match_id) !== matchId) {
-                window.location.replace('multiplayer.php');
+                if (shell.dataset.matchFinished === 'true') return;
+                invalidPolls += 1;
+                if (invalidPolls >= 2) window.location.replace('multiplayer.php');
+                else pollTimer = window.setTimeout(poll, 1000);
                 return;
             }
+            invalidPolls = 0;
             connectionStatus.classList.remove('is-offline');
             connectionLabel.textContent = 'Verbindung aktiv';
             if (!localEngine) applyGameState(status.game_state);

@@ -38,7 +38,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online-Match – 99 Luftballons</title>
     <link rel="stylesheet" href="multiplayer-game.css?v=multiplayer-ui-2">
-    <link rel="stylesheet" href="multiplayer-game/game.css?v=multiplayer-local-sim-1">
+    <link rel="stylesheet" href="multiplayer-game/game.css?v=multiplayer-final-1">
 </head>
 <body class="multiplayer-game-page">
     <main id="main-content" class="multiplayer-match-shell"
@@ -47,6 +47,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
           data-csrf-token="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>"
           data-match-id="<?= $matchId ?>"
           data-player-side="<?= $side ?>"
+          data-opponent-name="<?= htmlspecialchars((string) $status['opponent'], ENT_QUOTES, 'UTF-8') ?>"
           data-local-engine="true"
           data-player-map="<?= $playerMap['id'] ?>"
           data-opponent-map="<?= $opponentMap['id'] ?>">
@@ -115,8 +116,26 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
                 <p class="mp-local-status" id="multiplayer-local-status" role="status" aria-live="polite">Online-Synchronisierung aktiv. Beide Spieler geben jede Runde gemeinsam frei.</p>
             </div>
         </section>
+        <section class="mp-result-modal" id="multiplayer-result-modal" role="dialog" aria-modal="true" aria-labelledby="multiplayer-result-title" hidden>
+            <div class="mp-result-card">
+                <div class="mp-result-icon" id="multiplayer-result-icon" aria-hidden="true">★</div>
+                <p class="mp-kicker" id="multiplayer-result-kicker">Match beendet</p>
+                <h2 id="multiplayer-result-title">Ergebnis</h2>
+                <p id="multiplayer-result-message">Das Server-Ergebnis wird bestätigt …</p>
+                <div class="mp-result-stats" aria-label="Zusammenfassung des Matches">
+                    <span><small>Runde</small><strong id="multiplayer-result-round">0/30</strong></span>
+                    <span><small>Spieldauer</small><strong id="multiplayer-result-duration">00:00</strong></span>
+                    <span><small>Statistik</small><strong id="multiplayer-result-saved">Wird gespeichert</strong></span>
+                </div>
+                <div class="mp-result-actions">
+                    <button class="mp-result-primary" id="multiplayer-rematch" type="button">Rückspiel suchen</button>
+                    <button id="multiplayer-result-menu" type="button">Spielmodus wählen</button>
+                    <a href="history.php" id="multiplayer-result-history">Meine Runden</a>
+                </div>
+            </div>
+        </section>
     </main>
-    <script src="multiplayer-room.js?v=multiplayer-canvas-1"></script>
-    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-snapshot-1"></script>
+    <script src="multiplayer-room.js?v=multiplayer-final-1"></script>
+    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-final-1"></script>
 </body>
 </html>

@@ -37,6 +37,7 @@ $playerAvatar = avatar_data($_SESSION['avatar_code'] ?? 'forest_guardian');
     <main id="main-content" class="portal-shell matchmaking-shell"
           data-matchmaking-api="matchmaking-api.php"
           data-csrf-token="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>"
+          data-auto-join="<?= isset($_GET['rematch']) && $_GET['rematch'] === '1' ? 'true' : 'false' ?>"
           data-initial-status="<?= htmlspecialchars(json_encode($initialStatus, JSON_THROW_ON_ERROR), ENT_QUOTES, 'UTF-8') ?>">
         <header class="page-heading">
             <p class="eyebrow">Online-Duell</p>
@@ -82,6 +83,6 @@ $playerAvatar = avatar_data($_SESSION['avatar_code'] ?? 'forest_guardian');
         </section>
     </main>
     <?php require __DIR__ . '/site-footer.php'; ?>
-    <script src="matchmaking.js?v=matchmaking-ready-1"></script>
+    <script src="matchmaking.js?v=multiplayer-rematch-1"></script>
 </body>
 </html>

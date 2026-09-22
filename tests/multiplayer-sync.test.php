@@ -17,6 +17,7 @@ $pdo = new PDO('sqlite::memory:', null, null, [
 ]);
 $pdo->exec('PRAGMA foreign_keys = ON');
 $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT NOT NULL UNIQUE)');
+$pdo->exec('CREATE TABLE game_results (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, result TEXT NOT NULL, duration_seconds INTEGER NOT NULL, round_reached INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
 $pdo->exec("INSERT INTO users (id, username) VALUES (1, 'Ada'), (2, 'Bert')");
 ensure_matchmaking_tables($pdo);
 $pdo->exec("INSERT INTO multiplayer_matches (id, player_one_id, player_two_id, status) VALUES (1, 1, 2, 'active')");
@@ -84,8 +85,10 @@ sync_check($futureRejected, 'The server rejects snapshots that skip unknown acti
 multiplayer_report_result($pdo, 1, 1, 'loss');
 $outcome = multiplayer_outcome($pdo, 1);
 sync_check($outcome !== null && $outcome['winner_side'] === 2 && $outcome['reported_by_side'] === 1, 'Reporting only the own destroyed base creates an unambiguous server result');
+sync_check((int) $pdo->query('SELECT COUNT(*) FROM game_results')->fetchColumn() === 2, 'A completed duel creates one history result for each player');
 multiplayer_report_result($pdo, 1, 2, 'loss');
 sync_check(multiplayer_outcome($pdo, 1)['winner_side'] === 2, 'A simultaneous later report cannot replace the first committed result');
+sync_check((int) $pdo->query('SELECT COUNT(*) FROM game_results')->fetchColumn() === 2, 'Repeated result reports cannot duplicate player statistics');
 
 $finishedRejected = false;
 try {
@@ -103,6 +106,13 @@ $finalSnapshot['sides']['1']['hp'] = 70; $finalSnapshot['sides']['2']['hp'] = 54
 multiplayer_store_snapshot($pdo, 2, 1, json_encode($finalSnapshot, JSON_THROW_ON_ERROR));
 multiplayer_report_result($pdo, 2, 1, 'survived');
 sync_check(multiplayer_outcome($pdo, 2)['winner_side'] === 1 && multiplayer_outcome($pdo, 2)['reason'] === 'waves_survived', 'After round thirty the server decides by remaining base health');
+
+$pdo->exec("INSERT INTO multiplayer_matches (id, player_one_id, player_two_id, status) VALUES (4, 1, 2, 'active')");
+ensure_multiplayer_match_state($pdo, 4);
+$drawSnapshot = $finalSnapshot; $drawSnapshot['sides']['1']['hp'] = 60; $drawSnapshot['sides']['2']['hp'] = 60;
+multiplayer_store_snapshot($pdo, 4, 1, json_encode($drawSnapshot, JSON_THROW_ON_ERROR));
+$drawResults = $pdo->query('SELECT result FROM game_results g INNER JOIN multiplayer_result_records mr ON mr.game_result_id = g.id WHERE mr.match_id = 4 ORDER BY mr.user_id')->fetchAll(PDO::FETCH_COLUMN);
+sync_check(multiplayer_outcome($pdo, 4)['winner_side'] === null && $drawResults === ['draw', 'draw'], 'A true tie is stored as a draw for both accounts without falsifying wins');
 
 $pdo->exec("INSERT INTO multiplayer_matches (id, player_one_id, player_two_id, status) VALUES (3, 1, 2, 'active')");
 ensure_multiplayer_match_state($pdo, 3);

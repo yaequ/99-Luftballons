@@ -20,6 +20,15 @@ const startRoundButton = document.getElementById('multiplayer-start-round');
 const pauseButton = document.getElementById('multiplayer-pause');
 const autoStartInput = document.getElementById('multiplayer-auto-start');
 const localStatus = document.getElementById('multiplayer-local-status');
+const resultModal = document.getElementById('multiplayer-result-modal');
+const resultTitle = document.getElementById('multiplayer-result-title');
+const resultMessage = document.getElementById('multiplayer-result-message');
+const resultIcon = document.getElementById('multiplayer-result-icon');
+const rematchButton = document.getElementById('multiplayer-rematch');
+const resultMenuButton = document.getElementById('multiplayer-result-menu');
+const resultHistoryLink = document.getElementById('multiplayer-result-history');
+const connectionStatus = document.getElementById('connection-status');
+const connectionLabel = document.getElementById('connection-label');
 const mousePosition = { x: 0, y: 0, onCanvas: false };
 const playerMap = MAP_DATA[shell.dataset.playerMap];
 const opponentMap = MAP_DATA[shell.dataset.opponentMap];
@@ -39,6 +48,7 @@ let autoReadyTimer = 0;
 let snapshotTimer = 0;
 let snapshotRestored = false;
 let resultReported = false;
+let resultDisplayed = false;
 
 const engine = createMultiplayerEngine(playerMap, opponentMap, {
   ownSide,
@@ -48,6 +58,7 @@ const engine = createMultiplayerEngine(playerMap, opponentMap, {
     if (autoStartInput.checked) autoReadyTimer = window.setTimeout(requestRoundReady, 1800);
   },
   onGameOver: (result) => {
+    shell.dataset.matchFinished = 'true';
     showStatus(result === 'win' ? 'Sieg! Die gegnerische Basis ist gefallen.' : result === 'loss' ? 'Niederlage: Deine Basis ist gefallen.' : 'Alle 30 Runden geschafft.');
     finalizeResult(result);
   }
@@ -113,6 +124,26 @@ function updateInterface() {
 }
 
 function showStatus(message) { localStatus.textContent = message; }
+function setNetworkStatus(connected, label = connected ? 'Verbindung aktiv' : 'Verbindung wird wiederhergestellt …') {
+  online = connected; connectionStatus.classList.toggle('is-offline', !connected); connectionLabel.textContent = label;
+}
+function formatDuration(seconds) { const value = Math.max(0, Math.floor(seconds)); return `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`; }
+
+function showResult(outcome, saved) {
+  const firstDisplay = !resultDisplayed;
+  const draw = outcome.winner_side === null;
+  const won = Number(outcome.winner_side) === ownSide;
+  resultIcon.textContent = draw ? '◆' : won ? '★' : '♥';
+  resultTitle.textContent = draw ? 'Unentschieden!' : won ? 'Du hast gewonnen!' : 'Dein Gegner gewinnt';
+  resultMessage.textContent = draw
+    ? `Du und ${shell.dataset.opponentName} beendet das Duell gleichauf.`
+    : won ? `Starke Verteidigung – die Basis von ${shell.dataset.opponentName} ist gefallen.` : 'Deine Basis ist gefallen. Im Rückspiel kannst du direkt Revanche nehmen.';
+  document.getElementById('multiplayer-result-round').textContent = `${state.currentRound}/${CONFIG.WAVES}`;
+  document.getElementById('multiplayer-result-duration').textContent = formatDuration(state.secondsElapsed);
+  document.getElementById('multiplayer-result-saved').textContent = saved ? 'Gespeichert ✓' : 'Speichert …';
+  resultModal.hidden = false; resultDisplayed = true;
+  if (firstDisplay) window.setTimeout(() => rematchButton.focus(), 0);
+}
 function setTip(step, text) { mapTip.querySelector('b').textContent = String(step); mapTip.querySelector('span').textContent = text; }
 
 function selectTower(type) {
@@ -159,12 +190,14 @@ function applyResponse(data) {
   (data.events || []).forEach(applyEvent);
   if (data.ready) readyState = data.ready;
   if (data.outcome) {
+    shell.dataset.matchFinished = 'true';
     const draw = data.outcome.winner_side === null;
     const won = Number(data.outcome.winner_side) === ownSide;
     state.result = draw ? 'draw' : (won ? 'win' : 'loss'); state.active = false;
     showStatus(draw ? 'Unentschieden! Beide Basen haben gleich viele Lebenspunkte.' : won ? 'Sieg! Das Server-Ergebnis bestätigt deinen Erfolg.' : 'Das Match ist beendet: Dein Gegner gewinnt.');
+    showResult(data.outcome, Boolean(data.result_saved));
   }
-  online = true; updateInterface();
+  setNetworkStatus(true); updateInterface();
 }
 
 async function apiRequest(values = null) {
@@ -185,20 +218,20 @@ async function apiRequest(values = null) {
 
 async function sendAction(action, values = {}) {
   try { return await apiRequest({ action, action_id: actionId(), ...values }); }
-  catch (error) { online = false; updateInterface(); showStatus(`Synchronisierung fehlgeschlagen: ${error.message}`); return null; }
+  catch (error) { setNetworkStatus(false); updateInterface(); showStatus(`Synchronisierung fehlgeschlagen: ${error.message}`); return null; }
 }
 
 async function poll() {
   if (document.hidden || requestRunning) return;
   try { await apiRequest(); }
-  catch (error) { online = false; updateInterface(); showStatus('Verbindung unterbrochen – automatischer neuer Versuch läuft.'); }
+  catch (error) { setNetworkStatus(false); updateInterface(); showStatus('Verbindung unterbrochen – automatischer neuer Versuch läuft.'); }
 }
 
 async function sendSnapshot(force = false) {
   if (!assetsReady || document.hidden || (!force && requestRunning)) return null;
   const snapshot = JSON.stringify(engine.exportSnapshot(lastEventId));
   try { return await apiRequest({ action: 'snapshot', action_id: actionId(), snapshot }); }
-  catch { online = false; updateInterface(); return null; }
+  catch { setNetworkStatus(false); updateInterface(); return null; }
 }
 
 async function finalizeResult(result) {
@@ -215,6 +248,13 @@ async function finalizeResult(result) {
     resultReported = false;
     window.setTimeout(() => finalizeResult(result), 1500);
   }
+}
+
+async function leaveFinishedMatch(destination) {
+  [rematchButton, resultMenuButton].forEach((button) => { button.disabled = true; });
+  const body = new URLSearchParams({ action: 'leave', csrf_token: csrfToken });
+  try { await fetch(shell.dataset.matchmakingApi, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, body, credentials: 'same-origin' }); }
+  finally { window.location.assign(destination); }
 }
 
 function placeTower(x = mousePosition.x, y = mousePosition.y) {
@@ -253,6 +293,9 @@ balloonButtons.forEach((button) => button.addEventListener('click', () => sendAc
 startRoundButton.addEventListener('click', requestRoundReady);
 pauseButton.addEventListener('click', () => sendAction('pause', { paused: state.paused ? '0' : '1' }));
 autoStartInput.addEventListener('change', updateInterface);
+rematchButton.addEventListener('click', () => leaveFinishedMatch('multiplayer.php?rematch=1'));
+resultMenuButton.addEventListener('click', () => leaveFinishedMatch('game.php'));
+resultHistoryLink.addEventListener('click', (event) => { event.preventDefault(); leaveFinishedMatch(resultHistoryLink.href); });
 playerCanvas.addEventListener('pointermove', updatePointer);
 playerCanvas.addEventListener('pointerleave', () => { mousePosition.onCanvas = false; });
 playerCanvas.addEventListener('pointerdown', (event) => { event.preventDefault(); updatePointer(event); placeTower(); });

@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS multiplayer_match_outcomes (
 CREATE TABLE IF NOT EXISTS game_results (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NOT NULL,
-    result ENUM('win', 'loss') NOT NULL,
+    result ENUM('win', 'loss', 'draw') NOT NULL,
     duration_seconds INT UNSIGNED NOT NULL,
     round_reached TINYINT UNSIGNED NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -110,6 +110,17 @@ CREATE TABLE IF NOT EXISTS game_results (
     INDEX idx_game_results_user (user_id),
     INDEX idx_game_results_fastest (result, duration_seconds),
     INDEX idx_game_results_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS multiplayer_result_records (
+    match_id BIGINT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
+    game_result_id BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY (match_id, user_id),
+    UNIQUE KEY uq_multiplayer_game_result (game_result_id),
+    CONSTRAINT fk_multiplayer_result_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE,
+    CONSTRAINT fk_multiplayer_result_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_multiplayer_result_game FOREIGN KEY (game_result_id) REFERENCES game_results(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS auth_tokens (

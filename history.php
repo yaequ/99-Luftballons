@@ -5,7 +5,7 @@ require_login();
 require __DIR__ . '/db.php';
 require __DIR__ . '/portal.php';
 $userId = (int) $_SESSION['user_id'];
-$filter = option($_GET, 'result', ['all', 'win', 'loss'], 'all');
+$filter = option($_GET, 'result', ['all', 'win', 'loss', 'draw'], 'all');
 $pageInput = $_GET['page'] ?? '1';
 $page = is_string($pageInput) ? (filter_var($pageInput, FILTER_VALIDATE_INT) ?: 1) : 1;
 $history = match_history($pdo, $userId, $filter, $page);
@@ -19,7 +19,7 @@ $best = $stats['best'] === null ? null : (int) $stats['best'];
     <div class="page-heading"><p class="eyebrow">Dein Spielverlauf</p><h1>Runde für Runde.</h1><p class="card-intro">Deine gespeicherten Partien, Ergebnisse und persönlichen Bestzeiten.</p></div>
     <section class="portal-panel">
         <nav class="filter-pills" aria-label="Partien nach Ergebnis filtern">
-            <?php foreach (['all'=>'Alle', 'win'=>'Siege', 'loss'=>'Niederlagen'] as $value=>$label): ?>
+            <?php foreach (['all'=>'Alle', 'win'=>'Siege', 'loss'=>'Niederlagen', 'draw'=>'Unentschieden'] as $value=>$label): ?>
             <a href="history.php?result=<?= $value ?>"<?= $filter === $value ? ' aria-current="page"' : '' ?>><?= $label ?></a>
             <?php endforeach; ?>
         </nav>

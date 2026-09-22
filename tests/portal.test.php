@@ -41,6 +41,8 @@ check(match_history($pdo, 1, 'all', PHP_INT_MAX, 2)['page'] === 2, 'Out-of-range
 check(match_history($pdo, 1, 'all', -5)['page'] === 1, 'Negative page is clamped');
 check(match_history($pdo, 1, 'loss')['total'] === 1, 'Loss filter');
 check(match_history($pdo, 1, 'win')['total'] === 2, 'Win filter');
+$insert->execute([1,'draw',60,30,$now->format('Y-m-d H:i:s')]);
+check(match_history($pdo, 1, 'draw')['total'] === 1, 'Draw filter');
 check(match_history($pdo, 15)['total'] === 1, 'History is restricted to current user');
 check(option(['sort'=>['wins']], 'sort', ['wins','fastest'], 'fastest') === 'fastest', 'Array query parameters are rejected safely');
 check(period_bounds('week', new DateTimeImmutable('2026-01-01')) === ['2025-12-29 00:00:00','2026-01-05 00:00:00'], 'Week boundary across year');

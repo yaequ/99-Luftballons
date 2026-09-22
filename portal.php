@@ -22,7 +22,7 @@ function portal_head(string $title): void
 {
     echo '<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
     echo '<title>' . escape($title) . ' – 99 Luftballons</title>';
-    echo '<link rel="stylesheet" href="style.css?v=account-settings-1"><script src="theme.js?v=camp-1"></script>';
+    echo '<link rel="stylesheet" href="style.css?v=multiplayer-final-1"><script src="theme.js?v=camp-1"></script>';
 }
 
 // Calendar boundaries use the database's date, matching stored match timestamps.
@@ -91,7 +91,7 @@ function player_stats(PDO $pdo, int $userId): array
 function match_history(PDO $pdo, int $userId, string $filter = 'all', int $page = 1, int $size = 10): array
 {
     $size = max(1, min(50, $size));
-    $filter = in_array($filter, ['win', 'loss'], true) ? $filter : 'all';
+    $filter = in_array($filter, ['win', 'loss', 'draw'], true) ? $filter : 'all';
     $where = 'user_id = ?' . ($filter === 'all' ? '' : ' AND result = ?');
     $params = $filter === 'all' ? [$userId] : [$userId, $filter];
     $query = $pdo->prepare("SELECT COUNT(*) FROM game_results WHERE $where");
@@ -129,8 +129,9 @@ function history_table(array $entries, ?int $best): void
     echo '<div class="leaderboard-table-wrapper"><table class="leaderboard-table"><caption class="table-caption">Abgeschlossene Partien</caption><thead><tr><th scope="col">Datum</th><th scope="col">Ergebnis</th><th scope="col">Dauer</th><th scope="col">Runde</th></tr></thead><tbody>';
     foreach ($entries as $entry) {
         $win = $entry['result'] === 'win';
+        $draw = $entry['result'] === 'draw';
         echo '<tr><td>' . escape((new DateTimeImmutable($entry['created_at']))->format('d.m.Y · H:i')) . '</td>';
-        echo '<td><span class="result-badge ' . ($win ? 'result-win' : 'result-loss') . '">' . ($win ? 'Sieg' : 'Niederlage') . '</span></td>';
+        echo '<td><span class="result-badge ' . ($draw ? 'result-draw' : ($win ? 'result-win' : 'result-loss')) . '">' . ($draw ? 'Unentschieden' : ($win ? 'Sieg' : 'Niederlage')) . '</span></td>';
         echo '<td>' . duration((int) $entry['duration_seconds']);
         if ($win && $best !== null && (int) $entry['duration_seconds'] === $best) echo ' <span class="personal-best">Deine Bestzeit</span>';
         echo '</td><td>' . (int) $entry['round_reached'] . '/30</td></tr>';

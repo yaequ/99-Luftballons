@@ -30,6 +30,7 @@
     let redirectUrl = '';
     let redirecting = false;
     let pollTimer = 0;
+    let autoJoinHandled = false;
 
     function parseInitialStatus() {
         try {
@@ -153,6 +154,10 @@
         message.textContent = status.reason === 'opponent_disconnected'
             ? 'Die Verbindung zum Gegner wurde unterbrochen. Du kannst direkt erneut suchen.'
             : 'Du kannst die Suche jederzeit wieder verlassen.';
+        if (!autoJoinHandled && shell.dataset.autoJoin === 'true') {
+            autoJoinHandled = true;
+            window.setTimeout(() => request('join'), 0);
+        }
         leaveButton.textContent = 'Suche verlassen';
     }
 
