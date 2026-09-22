@@ -263,7 +263,7 @@ function placeTower(x = mousePosition.x, y = mousePosition.y) {
   const localCheck = canBuildAt(state.player, type, x, y);
   if (localCheck !== true) { setTip(2, placementMessage(localCheck, type)); return; }
   sendAction('build', { tower: type, x: String(x), y: String(y) }).then((data) => {
-    if (data) { clearSelection(); setTip('✓', `${CONFIG.TOWERS[type].name} wurde bei beiden Spielern platziert.`); }
+    if (data) clearSelection();
   });
 }
 

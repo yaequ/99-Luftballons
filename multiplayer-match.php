@@ -136,6 +136,6 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
         </section>
     </main>
     <script src="multiplayer-room.js?v=multiplayer-final-1"></script>
-    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-final-1"></script>
+    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-tip-1"></script>
 </body>
 </html>
