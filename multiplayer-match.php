@@ -43,8 +43,10 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
 <body class="multiplayer-game-page">
     <main id="main-content" class="multiplayer-match-shell"
           data-matchmaking-api="matchmaking-api.php"
+          data-game-api="multiplayer-game-api.php"
           data-csrf-token="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>"
           data-match-id="<?= $matchId ?>"
+          data-player-side="<?= $side ?>"
           data-local-engine="true"
           data-player-map="<?= $playerMap['id'] ?>"
           data-opponent-map="<?= $opponentMap['id'] ?>">
@@ -66,7 +68,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
             <div class="mp-round-card">
                 <span>Runde</span>
                 <strong id="match-round"><?= (int) $gameState['round'] ?>/<?= (int) $gameState['total_rounds'] ?></strong>
-                <small id="multiplayer-round-state">Lokale Simulation bereit</small>
+                <small id="multiplayer-round-state">Beide Spieler müssen bereit sein</small>
             </div>
             <article class="mp-player-card mp-player-card--opponent">
                 <img src="<?= htmlspecialchars((string) $status['opponent_avatar'], ENT_QUOTES, 'UTF-8') ?>" alt="" width="512" height="512">
@@ -90,7 +92,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
 
         <section class="mp-canvas-controls" aria-labelledby="online-actions-title">
             <div class="mp-tower-panel">
-                <div class="mp-control-heading"><div><span class="mp-kicker">Paket 4B · Verteidigung</span><h1 id="online-actions-title">Turm auswählen</h1></div><p>Identische Simulation wie im KI-Spiel</p></div>
+                <div class="mp-control-heading"><div><span class="mp-kicker">Online · Verteidigung</span><h1 id="online-actions-title">Turm auswählen</h1></div><p>Wird live mit deinem Gegner synchronisiert</p></div>
                 <div class="mp-tower-grid">
                     <button class="mp-tower-card" data-tower="cactus" type="button" aria-pressed="false"><canvas data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span><strong>Kaktus</strong><small>Schneller Schaden</small><em><img src="assets/img/goldnugget.png" alt="">25</em></span></button>
                     <button class="mp-tower-card" data-tower="fan" type="button" aria-pressed="false"><canvas data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span><strong>Gebläse</strong><small>Kurze Abklingzeit</small><em><img src="assets/img/goldnugget.png" alt="">45</em></span></button>
@@ -98,7 +100,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
                 </div>
             </div>
             <div class="mp-attack-panel">
-                <div class="mp-control-heading"><div><span class="mp-kicker">Paket 4B · Angriff</span><h2>Ballons senden</h2></div><p>Noch ausschließlich lokal</p></div>
+                <div class="mp-control-heading"><div><span class="mp-kicker">Online · Angriff</span><h2>Ballons senden</h2></div><p>Erreichen direkt die Karte deines Gegners</p></div>
                 <div class="mp-balloon-grid">
                     <button class="mp-balloon-card" data-balloon="red" type="button"><canvas data-balloon-portrait="red" width="64" height="64" aria-hidden="true"></canvas><span><strong>Rot</strong><small>10 Ballons</small><em><img src="assets/img/goldnugget.png" alt="">10 <b>+1/s</b></em></span></button>
                     <button class="mp-balloon-card" data-balloon="blue" type="button"><canvas data-balloon-portrait="blue" width="64" height="64" aria-hidden="true"></canvas><span><strong>Blau</strong><small>10 Ballons</small><em><img src="assets/img/goldnugget.png" alt="">25 <b>+2/s</b></em></span></button>
@@ -107,14 +109,14 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
                 </div>
                 <div class="mp-local-round-controls">
                     <label><input id="multiplayer-auto-start" type="checkbox" checked> Auto-Start</label>
-                    <button class="mp-local-primary" id="multiplayer-start-round" type="button">Lokale Runde starten</button>
+                    <button class="mp-local-primary" id="multiplayer-start-round" type="button">Bereit für Runde 1</button>
                     <button id="multiplayer-pause" type="button" disabled aria-pressed="false">Pausieren</button>
                 </div>
-                <p class="mp-local-status" id="multiplayer-local-status" role="status" aria-live="polite">4B simuliert alles lokal. Die Synchronisierung beider Browser folgt erst in 4C.</p>
+                <p class="mp-local-status" id="multiplayer-local-status" role="status" aria-live="polite">Online-Synchronisierung aktiv. Beide Spieler geben jede Runde gemeinsam frei.</p>
             </div>
         </section>
     </main>
     <script src="multiplayer-room.js?v=multiplayer-canvas-1"></script>
-    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-local-sim-1"></script>
+    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-sync-1"></script>
 </body>
 </html>
