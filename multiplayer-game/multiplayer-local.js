@@ -3,7 +3,7 @@ import { ASSETS, whenImageReady } from '../game/modules/assets.js';
 import { MAP_DATA } from '../game/modules/maps.js';
 import { createRenderer } from '../game/modules/renderer.js';
 import { canBuildAt } from '../game/modules/building.js';
-import { createMultiplayerEngine } from './engine.js';
+import { createMultiplayerEngine } from './engine.js?v=multiplayer-snapshot-1';
 
 const shell = document.querySelector('.multiplayer-match-shell[data-local-engine="true"]');
 if (!shell) throw new Error('Multiplayer canvas shell not found.');
@@ -36,6 +36,9 @@ let online = true;
 let assetsReady = false;
 let animationFrame = 0;
 let autoReadyTimer = 0;
+let snapshotTimer = 0;
+let snapshotRestored = false;
+let resultReported = false;
 
 const engine = createMultiplayerEngine(playerMap, opponentMap, {
   ownSide,
@@ -44,9 +47,10 @@ const engine = createMultiplayerEngine(playerMap, opponentMap, {
     showStatus(`Runde ${round} geschafft. Beide Spieler können die nächste Runde freigeben.`);
     if (autoStartInput.checked) autoReadyTimer = window.setTimeout(requestRoundReady, 1800);
   },
-  onGameOver: (result) => showStatus(result === 'win'
-    ? 'Sieg! Die gegnerische Basis ist gefallen.'
-    : result === 'loss' ? 'Niederlage: Deine Basis ist gefallen.' : 'Alle 30 Runden geschafft.')
+  onGameOver: (result) => {
+    showStatus(result === 'win' ? 'Sieg! Die gegnerische Basis ist gefallen.' : result === 'loss' ? 'Niederlage: Deine Basis ist gefallen.' : 'Alle 30 Runden geschafft.');
+    finalizeResult(result);
+  }
 });
 const state = engine.state;
 const { renderSide, renderTowerPortraits, renderBalloonPortraits } = createRenderer(() => state, mousePosition);
@@ -145,8 +149,21 @@ function applyEvent(event) {
 }
 
 function applyResponse(data) {
+  if (!snapshotRestored) {
+    snapshotRestored = true;
+    if (data.snapshot?.state && engine.restoreSnapshot(data.snapshot.state)) {
+      lastEventId = Math.max(lastEventId, Number(data.snapshot.event_id) || 0);
+      showStatus('Gespeicherter Online-Spielstand wurde wiederhergestellt.');
+    }
+  }
   (data.events || []).forEach(applyEvent);
   if (data.ready) readyState = data.ready;
+  if (data.outcome) {
+    const draw = data.outcome.winner_side === null;
+    const won = Number(data.outcome.winner_side) === ownSide;
+    state.result = draw ? 'draw' : (won ? 'win' : 'loss'); state.active = false;
+    showStatus(draw ? 'Unentschieden! Beide Basen haben gleich viele Lebenspunkte.' : won ? 'Sieg! Das Server-Ergebnis bestätigt deinen Erfolg.' : 'Das Match ist beendet: Dein Gegner gewinnt.');
+  }
   online = true; updateInterface();
 }
 
@@ -175,6 +192,29 @@ async function poll() {
   if (document.hidden || requestRunning) return;
   try { await apiRequest(); }
   catch (error) { online = false; updateInterface(); showStatus('Verbindung unterbrochen – automatischer neuer Versuch läuft.'); }
+}
+
+async function sendSnapshot(force = false) {
+  if (!assetsReady || document.hidden || (!force && requestRunning)) return null;
+  const snapshot = JSON.stringify(engine.exportSnapshot(lastEventId));
+  try { return await apiRequest({ action: 'snapshot', action_id: actionId(), snapshot }); }
+  catch { online = false; updateInterface(); return null; }
+}
+
+async function finalizeResult(result) {
+  if (!['loss', 'survived'].includes(result) || resultReported) return;
+  resultReported = true;
+  const stored = await sendSnapshot(true);
+  if (result === 'survived' && !stored) {
+    resultReported = false;
+    window.setTimeout(() => finalizeResult(result), 1500);
+    return;
+  }
+  const reported = await sendAction('report_result', { result });
+  if (!reported) {
+    resultReported = false;
+    window.setTimeout(() => finalizeResult(result), 1500);
+  }
 }
 
 function placeTower(x = mousePosition.x, y = mousePosition.y) {
@@ -233,8 +273,14 @@ async function initialize() {
     await Promise.all(images.map((image) => whenImageReady(image).then(() => { loaded += 1; loadingStatus.textContent = `Spielgrafiken werden geladen: ${loaded}/${images.length}`; })));
     assetsReady = true; loadingStatus.hidden = true; renderTowerPortraits(); renderBalloonPortraits(); updateInterface();
     await poll(); frame(performance.now()); window.setInterval(poll, 450);
+    snapshotTimer = window.setInterval(sendSnapshot, 2000);
   } catch (error) { loadingStatus.textContent = `Spiel konnte nicht geladen werden: ${error.message}`; loadingStatus.classList.add('is-error'); }
 }
 
-window.addEventListener('pagehide', () => { window.cancelAnimationFrame(animationFrame); window.clearTimeout(autoReadyTimer); });
+window.addEventListener('pagehide', () => {
+  window.cancelAnimationFrame(animationFrame); window.clearTimeout(autoReadyTimer); window.clearInterval(snapshotTimer);
+  if (!assetsReady || !navigator.sendBeacon) return;
+  const body = new URLSearchParams({ action: 'snapshot', action_id: actionId(), csrf_token: csrfToken, match_id: String(matchId), after: String(lastEventId), snapshot: JSON.stringify(engine.exportSnapshot(lastEventId)) });
+  navigator.sendBeacon(gameApi, body);
+});
 updateInterface(); initialize();

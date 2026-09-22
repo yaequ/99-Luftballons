@@ -21,6 +21,7 @@ try {
     if ($matchId === false || $afterId === false) throw new InvalidArgumentException('Ungültige Match-Anfrage.');
     $match = multiplayer_sync_match($pdo, (int) $matchId, $userId);
     $side = multiplayer_sync_side($match, $userId);
+    $snapshot = (int) $afterId === 0 ? multiplayer_snapshot($pdo, (int) $matchId) : null;
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!valid_csrf($_POST)) {
@@ -29,7 +30,13 @@ try {
             exit;
         }
         $action = is_string($_POST['action'] ?? null) ? $_POST['action'] : '';
-        if ($action === 'ready_round') {
+        if ($action === 'snapshot') {
+            $snapshotJson = is_string($_POST['snapshot'] ?? null) ? $_POST['snapshot'] : '';
+            multiplayer_store_snapshot($pdo, (int) $matchId, $userId, $snapshotJson);
+        } elseif ($action === 'report_result') {
+            $result = is_string($_POST['result'] ?? null) ? $_POST['result'] : '';
+            multiplayer_report_result($pdo, (int) $matchId, $userId, $result);
+        } elseif ($action === 'ready_round') {
             multiplayer_ready_round($pdo, (int) $matchId, $userId);
         } else {
             $actionId = is_string($_POST['action_id'] ?? null) ? $_POST['action_id'] : '';
@@ -40,11 +47,14 @@ try {
         throw new DomainException('Methode nicht erlaubt.');
     }
 
+    $eventCursor = $snapshot !== null ? max((int) $afterId, (int) $snapshot['event_id']) : (int) $afterId;
     echo json_encode([
         'match_id' => (int) $matchId,
         'side' => $side,
-        'events' => multiplayer_sync_events($pdo, (int) $matchId, (int) $afterId),
+        'snapshot' => $snapshot,
+        'events' => multiplayer_sync_events($pdo, (int) $matchId, $eventCursor),
         'ready' => multiplayer_readiness($pdo, (int) $matchId, $side),
+        'outcome' => multiplayer_outcome($pdo, (int) $matchId),
         'server_time' => round(microtime(true) * 1000),
     ], JSON_THROW_ON_ERROR);
 } catch (InvalidArgumentException | DomainException $error) {

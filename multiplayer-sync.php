@@ -27,6 +27,23 @@ function ensure_multiplayer_sync_tables(PDO $pdo): void
             PRIMARY KEY (match_id, player_side),
             FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
         )");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS multiplayer_game_snapshots (
+            match_id INTEGER PRIMARY KEY,
+            event_id INTEGER NOT NULL DEFAULT 0,
+            source_side INTEGER NOT NULL,
+            round_number INTEGER NOT NULL DEFAULT 0,
+            state_payload TEXT NOT NULL,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
+        )");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS multiplayer_match_outcomes (
+            match_id INTEGER PRIMARY KEY,
+            winner_side INTEGER DEFAULT NULL,
+            reason TEXT NOT NULL,
+            reported_by_side INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
+        )");
         return;
     }
 
@@ -50,6 +67,25 @@ function ensure_multiplayer_sync_tables(PDO $pdo): void
         ready_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (match_id, player_side),
         CONSTRAINT fk_multiplayer_round_readiness_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS multiplayer_game_snapshots (
+        match_id BIGINT UNSIGNED PRIMARY KEY,
+        event_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        source_side TINYINT UNSIGNED NOT NULL,
+        round_number TINYINT UNSIGNED NOT NULL DEFAULT 0,
+        state_payload MEDIUMTEXT NOT NULL,
+        updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+        CONSTRAINT fk_multiplayer_game_snapshot_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS multiplayer_match_outcomes (
+        match_id BIGINT UNSIGNED PRIMARY KEY,
+        winner_side TINYINT UNSIGNED DEFAULT NULL,
+        reason VARCHAR(24) NOT NULL,
+        reported_by_side TINYINT UNSIGNED NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_multiplayer_match_outcome_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 }
 
@@ -144,6 +180,17 @@ function multiplayer_insert_event(PDO $pdo, int $matchId, int $side, string $typ
     }
 }
 
+function multiplayer_enforce_action_rate(PDO $pdo, int $matchId, int $side): void
+{
+    $recentSql = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+        ? "SELECT COUNT(*) FROM multiplayer_game_events WHERE match_id = ? AND actor_side = ? AND created_at >= datetime(CURRENT_TIMESTAMP, '-1 second')"
+        : 'SELECT COUNT(*) FROM multiplayer_game_events WHERE match_id = ? AND actor_side = ? AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 SECOND)';
+    $recent = $pdo->prepare($recentSql); $recent->execute([$matchId, $side]);
+    if ((int) $recent->fetchColumn() >= 20) throw new DomainException('Zu viele Spielaktionen in kurzer Zeit.');
+    $total = $pdo->prepare('SELECT COUNT(*) FROM multiplayer_game_events WHERE match_id = ?'); $total->execute([$matchId]);
+    if ((int) $total->fetchColumn() >= 20000) throw new DomainException('Das Aktionslimit dieses Matches wurde erreicht.');
+}
+
 function multiplayer_record_action(PDO $pdo, int $matchId, int $userId, string $action, string $actionId, array $input): void
 {
     if (!multiplayer_valid_action_id($actionId)) throw new InvalidArgumentException('Ungültige Aktions-ID.');
@@ -151,6 +198,8 @@ function multiplayer_record_action(PDO $pdo, int $matchId, int $userId, string $
     try {
         $match = multiplayer_sync_match($pdo, $matchId, $userId, true);
         $side = multiplayer_sync_side($match, $userId);
+        multiplayer_assert_unfinished($pdo, $matchId);
+        multiplayer_enforce_action_rate($pdo, $matchId, $side);
         if ($action === 'build') {
             $tower = is_string($input['tower'] ?? null) ? $input['tower'] : '';
             $x = filter_var($input['x'] ?? null, FILTER_VALIDATE_FLOAT);
@@ -184,6 +233,7 @@ function multiplayer_ready_round(PDO $pdo, int $matchId, int $userId): void
     try {
         $match = multiplayer_sync_match($pdo, $matchId, $userId, true);
         $side = multiplayer_sync_side($match, $userId);
+        multiplayer_assert_unfinished($pdo, $matchId);
         $roundQuery = $pdo->prepare("SELECT COUNT(*) FROM multiplayer_game_events WHERE match_id = ? AND event_type = 'round_start'");
         $roundQuery->execute([$matchId]);
         $targetRound = (int) $roundQuery->fetchColumn() + 1;
@@ -219,4 +269,150 @@ function multiplayer_readiness(PDO $pdo, int $matchId, int $side): array
     $query->execute([$matchId, $targetRound]);
     $readySides = array_map('intval', $query->fetchAll(PDO::FETCH_COLUMN));
     return ['you' => in_array($side, $readySides, true), 'opponent' => in_array($side === 1 ? 2 : 1, $readySides, true)];
+}
+
+function multiplayer_validate_snapshot(array $snapshot): void
+{
+    if (($snapshot['version'] ?? null) !== 1) throw new InvalidArgumentException('Unbekannte Snapshot-Version.');
+    $eventId = filter_var($snapshot['eventId'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+    $round = filter_var($snapshot['currentRound'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 30]]);
+    $seconds = filter_var($snapshot['secondsElapsed'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 86400]]);
+    if ($eventId === false || $round === false || $seconds === false) throw new InvalidArgumentException('Ungültiger Snapshot-Fortschritt.');
+    if (!in_array($snapshot['roundStatus'] ?? null, ['ready', 'spawning', 'clearing', 'completed'], true)) throw new InvalidArgumentException('Ungültiger Rundenstatus.');
+    foreach ([1, 2] as $side) {
+        $sideState = $snapshot['sides'][(string) $side] ?? $snapshot['sides'][$side] ?? null;
+        $wave = $snapshot['waves'][(string) $side] ?? $snapshot['waves'][$side] ?? null;
+        if (!is_array($sideState) || !is_array($wave)) throw new InvalidArgumentException('Snapshot-Seiten fehlen.');
+        $hp = filter_var($sideState['hp'] ?? null, FILTER_VALIDATE_FLOAT);
+        $gold = filter_var($sideState['gold'] ?? null, FILTER_VALIDATE_FLOAT);
+        $income = filter_var($sideState['income'] ?? null, FILTER_VALIDATE_FLOAT);
+        if ($hp === false || $hp < 0 || $hp > 99 || $gold === false || $gold < -1000 || $gold > 10000000 || $income === false || $income < 0 || $income > 100000) {
+            throw new InvalidArgumentException('Ungültige Ressourcen im Snapshot.');
+        }
+        $towers = $sideState['towers'] ?? null; $balloons = $sideState['balloons'] ?? null; $queue = $sideState['sendQueue'] ?? null;
+        if (!is_array($towers) || count($towers) > 100 || !is_array($balloons) || count($balloons) > 1500 || !is_array($queue) || count($queue) > 100) {
+            throw new InvalidArgumentException('Snapshot enthält zu viele Spielelemente.');
+        }
+        foreach ($towers as $tower) {
+            if (!is_array($tower) || !in_array($tower['type'] ?? null, ['cactus', 'fan', 'lens'], true)) throw new InvalidArgumentException('Ungültiger Turm im Snapshot.');
+            $x = filter_var($tower['x'] ?? null, FILTER_VALIDATE_FLOAT); $y = filter_var($tower['y'] ?? null, FILTER_VALIDATE_FLOAT);
+            if ($x === false || $y === false || $x < 0 || $x > 320 || $y < 0 || $y > 240) throw new InvalidArgumentException('Ungültige Turmposition im Snapshot.');
+            $inside = false;
+            foreach (multiplayer_build_zones($side) as $zone) {
+                if ($x >= $zone['x'] && $x <= $zone['x'] + $zone['w'] && $y >= $zone['y'] && $y <= $zone['y'] + $zone['h']) { $inside = true; break; }
+            }
+            if (!$inside) throw new InvalidArgumentException('Ein Snapshot-Turm liegt außerhalb der Bauflächen.');
+        }
+        foreach ($balloons as $balloon) {
+            if (!is_array($balloon) || !in_array($balloon['type'] ?? null, ['red', 'blue', 'green', 'yellow', 'boss'], true)) throw new InvalidArgumentException('Ungültiger Ballon im Snapshot.');
+        }
+        if (!is_array($wave['groups'] ?? null) || count($wave['groups']) > 1500) throw new InvalidArgumentException('Ungültige Welle im Snapshot.');
+    }
+}
+
+function multiplayer_snapshot(PDO $pdo, int $matchId): ?array
+{
+    $query = $pdo->prepare('SELECT event_id, source_side, state_payload, updated_at FROM multiplayer_game_snapshots WHERE match_id = ? LIMIT 1');
+    $query->execute([$matchId]);
+    $row = $query->fetch();
+    if ($row === false) return null;
+    $state = json_decode((string) $row['state_payload'], true, 32, JSON_THROW_ON_ERROR);
+    return ['event_id' => (int) $row['event_id'], 'source_side' => (int) $row['source_side'], 'state' => $state, 'updated_at' => (string) $row['updated_at']];
+}
+
+function multiplayer_store_snapshot(PDO $pdo, int $matchId, int $userId, string $snapshotJson): void
+{
+    if ($snapshotJson === '' || strlen($snapshotJson) > 350000) throw new InvalidArgumentException('Der Spielstand ist ungültig oder zu groß.');
+    try {
+        $snapshot = json_decode($snapshotJson, true, 32, JSON_THROW_ON_ERROR);
+    } catch (JsonException) {
+        throw new InvalidArgumentException('Ungültiges Snapshot-Format.');
+    }
+    if (!is_array($snapshot)) throw new InvalidArgumentException('Ungültiger Spielstand.');
+    multiplayer_validate_snapshot($snapshot);
+
+    $pdo->beginTransaction();
+    try {
+        $match = multiplayer_sync_match($pdo, $matchId, $userId, true);
+        $side = multiplayer_sync_side($match, $userId);
+        if ((int) ($snapshot['ownSide'] ?? 0) !== $side) throw new InvalidArgumentException('Der Snapshot gehört zur falschen Spielerseite.');
+        $eventId = (int) $snapshot['eventId'];
+        $latest = $pdo->prepare('SELECT COALESCE(MAX(id), 0) FROM multiplayer_game_events WHERE match_id = ?');
+        $latest->execute([$matchId]);
+        if ($eventId > (int) $latest->fetchColumn()) throw new InvalidArgumentException('Der Snapshot verweist auf unbekannte Aktionen.');
+
+        $currentSql = 'SELECT event_id, state_payload FROM multiplayer_game_snapshots WHERE match_id = ?';
+        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite') $currentSql .= ' FOR UPDATE';
+        $currentQuery = $pdo->prepare($currentSql); $currentQuery->execute([$matchId]); $current = $currentQuery->fetch();
+        $currentSeconds = -1;
+        if ($current !== false) {
+            $decoded = json_decode((string) $current['state_payload'], true);
+            $currentSeconds = is_array($decoded) ? (int) ($decoded['secondsElapsed'] ?? -1) : -1;
+        }
+        $shouldStore = $current === false || $eventId > (int) $current['event_id'] || ($eventId === (int) $current['event_id'] && (int) $snapshot['secondsElapsed'] >= $currentSeconds);
+        if ($shouldStore) {
+            $encoded = json_encode($snapshot, JSON_THROW_ON_ERROR);
+            if ($current === false) {
+                $write = $pdo->prepare('INSERT INTO multiplayer_game_snapshots (match_id, event_id, source_side, round_number, state_payload) VALUES (?, ?, ?, ?, ?)');
+            } else {
+                $write = $pdo->prepare('UPDATE multiplayer_game_snapshots SET event_id = ?, source_side = ?, round_number = ?, state_payload = ?, updated_at = CURRENT_TIMESTAMP WHERE match_id = ?');
+            }
+            $current === false
+                ? $write->execute([$matchId, $eventId, $side, (int) $snapshot['currentRound'], $encoded])
+                : $write->execute([$eventId, $side, (int) $snapshot['currentRound'], $encoded, $matchId]);
+
+            $sideOne = $snapshot['sides']['1'] ?? $snapshot['sides'][1]; $sideTwo = $snapshot['sides']['2'] ?? $snapshot['sides'][2];
+            $state = $pdo->prepare('UPDATE multiplayer_match_state SET round_number = ?, player_one_hp = ?, player_one_gold = ?, player_one_income = ?, player_two_hp = ?, player_two_gold = ?, player_two_income = ? WHERE match_id = ?');
+            $state->execute([(int) $snapshot['currentRound'], (int) $sideOne['hp'], max(0, (int) $sideOne['gold']), (int) $sideOne['income'], (int) $sideTwo['hp'], max(0, (int) $sideTwo['gold']), (int) $sideTwo['income'], $matchId]);
+        }
+        $pdo->commit();
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $error;
+    }
+}
+
+function multiplayer_outcome(PDO $pdo, int $matchId): ?array
+{
+    $query = $pdo->prepare('SELECT winner_side, reason, reported_by_side, created_at FROM multiplayer_match_outcomes WHERE match_id = ? LIMIT 1');
+    $query->execute([$matchId]);
+    $row = $query->fetch();
+    if ($row === false) return null;
+    return ['winner_side' => $row['winner_side'] === null ? null : (int) $row['winner_side'], 'reason' => (string) $row['reason'], 'reported_by_side' => (int) $row['reported_by_side'], 'created_at' => (string) $row['created_at']];
+}
+
+function multiplayer_assert_unfinished(PDO $pdo, int $matchId): void
+{
+    if (multiplayer_outcome($pdo, $matchId) !== null) throw new DomainException('Das Online-Match ist bereits beendet.');
+}
+
+function multiplayer_report_result(PDO $pdo, int $matchId, int $userId, string $result): void
+{
+    if (!in_array($result, ['loss', 'survived'], true)) throw new InvalidArgumentException('Ungültiges Match-Ergebnis.');
+    $pdo->beginTransaction();
+    try {
+        $match = multiplayer_sync_match($pdo, $matchId, $userId, true);
+        $reportingSide = multiplayer_sync_side($match, $userId);
+        $winnerSide = $reportingSide === 1 ? 2 : 1;
+        $reason = 'base_destroyed';
+        if ($result === 'survived') {
+            $snapshot = multiplayer_snapshot($pdo, $matchId);
+            $state = $snapshot['state'] ?? null;
+            if (!is_array($state) || (int) ($state['currentRound'] ?? 0) < 30 || ($state['roundStatus'] ?? '') !== 'completed') {
+                throw new DomainException('Die letzte Runde ist serverseitig noch nicht abgeschlossen.');
+            }
+            $hpOne = (float) ($state['sides']['1']['hp'] ?? -1); $hpTwo = (float) ($state['sides']['2']['hp'] ?? -1);
+            $winnerSide = $hpOne === $hpTwo ? null : ($hpOne > $hpTwo ? 1 : 2);
+            $reason = 'waves_survived';
+        }
+        $existing = multiplayer_outcome($pdo, $matchId);
+        if ($existing === null) {
+            $insert = $pdo->prepare('INSERT INTO multiplayer_match_outcomes (match_id, winner_side, reason, reported_by_side) VALUES (?, ?, ?, ?)');
+            $insert->execute([$matchId, $winnerSide, $reason, $reportingSide]);
+        }
+        $pdo->commit();
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $error;
+    }
 }

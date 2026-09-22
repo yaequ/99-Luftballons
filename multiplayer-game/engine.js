@@ -47,9 +47,10 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
 
   function spawnBalloon(targetSide, type, fromRound = false, random = Math.random) {
     const balloon = CONFIG.BALLOONS[type];
-    const sourcePath = targetSide.map.paths[Math.floor(random() * targetSide.map.paths.length)];
+    const pathRouteIndex = Math.floor(random() * targetSide.map.paths.length);
+    const sourcePath = targetSide.map.paths[pathRouteIndex];
     const path = sourcePath.map((point) => mapPathPoint(targetSide.map, point));
-    targetSide.balloons.push({ type, x: path[0].x, y: path[0].y, path, pathIndex: 0, hp: balloon.hp, maxHp: balloon.hp, speed: balloon.speed, lifeDamage: balloon.lifeDamage, renderSize: balloon.renderSize, fromRound });
+    targetSide.balloons.push({ type, x: path[0].x, y: path[0].y, path, pathRouteIndex, pathIndex: 0, hp: balloon.hp, maxHp: balloon.hp, speed: balloon.speed, lifeDamage: balloon.lifeDamage, renderSize: balloon.renderSize, fromRound });
   }
 
   function sendBalloonFor(owner, type, force = false) {
@@ -188,7 +189,82 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
   }
 
   function setPaused(paused) { if (!state.active || state.result) return false; state.paused = Boolean(paused); notify(); return true; }
-  return { state, buildTower, buildTowerFor, sendBalloon, sendBalloonFor, startRound, update, setPaused };
+
+  function finite(value, fallback = 0) { return Number.isFinite(Number(value)) ? Number(value) : fallback; }
+
+  function serializeSide(side) {
+    return {
+      hp: side.hp, gold: side.gold, income: side.income, sendClock: side.sendClock,
+      towers: side.towers.map(({ x, y, type, cooldown, frameIndex }) => ({ x, y, type, cooldown, frameIndex })),
+      balloons: side.balloons.map(({ type, x, y, pathRouteIndex, pathIndex, hp, fromRound }) => ({ type, x, y, pathRouteIndex: pathRouteIndex || 0, pathIndex, hp, fromRound })),
+      sendQueue: side.sendQueue.map(({ type, remaining }) => ({ type, remaining }))
+    };
+  }
+
+  function serializeWave(wave) {
+    return { groups: wave.groups, groupIndex: wave.groupIndex, remainingInGroup: wave.remainingInGroup, spawnClock: wave.spawnClock, remaining: wave.remaining, doneSpawning: wave.doneSpawning };
+  }
+
+  function exportSnapshot(eventId = 0) {
+    const absolute = ownSide === 1
+      ? { 1: state.player, 2: state.enemy, wave1: state.waves.player, wave2: state.waves.enemy }
+      : { 1: state.enemy, 2: state.player, wave1: state.waves.enemy, wave2: state.waves.player };
+    return {
+      version: 1, eventId, ownSide, active: state.active, paused: state.paused,
+      secondsElapsed: state.secondsElapsed, economyClock: state.economyClock,
+      currentRound: state.currentRound, roundStatus: state.roundStatus,
+      sides: { 1: serializeSide(absolute[1]), 2: serializeSide(absolute[2]) },
+      waves: { 1: serializeWave(absolute.wave1), 2: serializeWave(absolute.wave2) }
+    };
+  }
+
+  function restoreSide(target, saved) {
+    if (!saved || typeof saved !== 'object') return;
+    target.hp = Math.max(0, Math.min(99, finite(saved.hp, 99)));
+    target.gold = Math.max(-1000, finite(saved.gold, 100));
+    target.income = Math.max(0, finite(saved.income, 5));
+    target.sendClock = Math.max(0, finite(saved.sendClock));
+    target.towers = (Array.isArray(saved.towers) ? saved.towers : []).flatMap((item) => {
+      const tower = CONFIG.TOWERS[item?.type];
+      if (!tower) return [];
+      return [{ x: finite(item.x), y: finite(item.y), type: item.type, range: tower.range, damage: tower.damage, fireRate: tower.fireRate, cooldown: Math.max(0, finite(item.cooldown)), color: tower.color, frameIndex: Math.max(0, Math.floor(finite(item.frameIndex))) }];
+    });
+    target.balloons = (Array.isArray(saved.balloons) ? saved.balloons : []).flatMap((item) => {
+      const balloon = CONFIG.BALLOONS[item?.type];
+      if (!balloon) return [];
+      const routeIndex = Math.max(0, Math.min(target.map.paths.length - 1, Math.floor(finite(item.pathRouteIndex))));
+      const path = target.map.paths[routeIndex].map((point) => mapPathPoint(target.map, point));
+      return [{ type: item.type, x: finite(item.x, path[0].x), y: finite(item.y, path[0].y), path, pathRouteIndex: routeIndex, pathIndex: Math.max(0, Math.min(path.length - 1, Math.floor(finite(item.pathIndex)))), hp: Math.max(0.01, finite(item.hp, balloon.hp)), maxHp: balloon.hp, speed: balloon.speed, lifeDamage: balloon.lifeDamage, renderSize: balloon.renderSize, fromRound: Boolean(item.fromRound) }];
+    });
+    target.sendQueue = (Array.isArray(saved.sendQueue) ? saved.sendQueue : []).flatMap((item) => CONFIG.BALLOONS[item?.type] ? [{ type: item.type, remaining: Math.max(0, Math.min(CONFIG.SEND_BATCH_SIZE, Math.floor(finite(item.remaining)))) }] : []);
+    target.projectiles = []; target.pops = [];
+  }
+
+  function restoreWave(target, saved) {
+    if (!saved || typeof saved !== 'object') return;
+    target.groups = (Array.isArray(saved.groups) ? saved.groups : []).flatMap((group) => CONFIG.BALLOONS[group?.type] ? [{ type: group.type, count: Math.max(0, Math.floor(finite(group.count))) }] : []);
+    target.groupIndex = Math.max(0, Math.floor(finite(saved.groupIndex)));
+    target.remainingInGroup = Math.max(0, Math.floor(finite(saved.remainingInGroup)));
+    target.spawnClock = finite(saved.spawnClock);
+    target.remaining = Math.max(0, Math.floor(finite(saved.remaining)));
+    target.doneSpawning = Boolean(saved.doneSpawning);
+  }
+
+  function restoreSnapshot(snapshot) {
+    if (!snapshot || snapshot.version !== 1 || !snapshot.sides || !snapshot.waves) return false;
+    const playerKey = String(ownSide); const enemyKey = String(ownSide === 1 ? 2 : 1);
+    restoreSide(state.player, snapshot.sides[playerKey]); restoreSide(state.enemy, snapshot.sides[enemyKey]);
+    restoreWave(state.waves.player, snapshot.waves[playerKey]); restoreWave(state.waves.enemy, snapshot.waves[enemyKey]);
+    state.active = Boolean(snapshot.active); state.paused = Boolean(snapshot.paused); state.result = null;
+    state.secondsElapsed = Math.max(0, Math.floor(finite(snapshot.secondsElapsed)));
+    state.economyClock = Math.max(0, Math.min(1, finite(snapshot.economyClock)));
+    state.currentRound = Math.max(0, Math.min(CONFIG.WAVES, Math.floor(finite(snapshot.currentRound))));
+    state.roundStatus = ['ready', 'spawning', 'clearing', 'completed'].includes(snapshot.roundStatus) ? snapshot.roundStatus : 'ready';
+    state.remainingEnemies = state.waves.player.remaining; state.enemyRemainingEnemies = state.waves.enemy.remaining;
+    notify(); return true;
+  }
+
+  return { state, buildTower, buildTowerFor, sendBalloon, sendBalloonFor, startRound, update, setPaused, exportSnapshot, restoreSnapshot };
 }
 
 export { createMultiplayerEngine };

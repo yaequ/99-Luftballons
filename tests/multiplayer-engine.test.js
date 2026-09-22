@@ -42,3 +42,14 @@ sideOne.update(0.1);
 sideTwo.update(0.1);
 check(sideOne.state.player.balloons[0].type === sideTwo.state.enemy.balloons[0].type, 'The same absolute map receives the same seeded wave in both browser perspectives');
 check(sideOne.state.enemy.balloons[0].type === sideTwo.state.player.balloons[0].type, 'Seeded waves remain mirrored for the second player side');
+
+sideOne.buildTowerFor('player', 'cactus', 100, 40, true);
+sideOne.sendBalloonFor('player', 'green', true);
+sideOne.update(0.5);
+const saved = sideOne.exportSnapshot(42);
+const restoredOne = createMultiplayerEngine(map, map, { ownSide: 1 });
+const restoredTwo = createMultiplayerEngine(map, map, { ownSide: 2 });
+check(restoredOne.restoreSnapshot(saved) === true && restoredOne.state.player.towers.length === 1, 'A reconnect restores the local tower state');
+check(restoredOne.state.enemy.balloons.length === sideOne.state.enemy.balloons.length, 'A reconnect restores balloons currently travelling on the opponent map');
+check(restoredTwo.restoreSnapshot(saved) === true && restoredTwo.state.enemy.towers.length === 1, 'The same snapshot is mapped correctly from the opposite browser perspective');
+check(restoredTwo.state.currentRound === sideOne.state.currentRound && restoredTwo.state.player.gold === sideOne.state.enemy.gold, 'Round and absolute resources survive perspective-safe restoration');
