@@ -168,6 +168,10 @@ form > .primary-button { margin-top: .8rem; width: 100%; }
 .leaderboard-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem; width: min(100%, 500px); margin: 1.8rem auto; padding: .35rem; border-radius: 16px; background: var(--soft); border: 1px solid var(--line); }
 .leaderboard-tabs a { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: .65rem 1rem; border-radius: 11px; color: var(--muted); text-align: center; text-decoration: none; font-size: .8rem; font-weight: 800; white-space: nowrap; }
 .leaderboard-tabs a.active { color: var(--green); background: var(--paper); box-shadow: 0 2px 5px #163e2412; }
+.mode-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; width: min(100%, 620px); margin: 0 auto 1.1rem; padding: .4rem; border: 1px solid var(--line); border-radius: 18px; background: var(--soft); }
+.mode-tabs-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mode-tabs a { display: flex; align-items: center; justify-content: center; min-height: 50px; padding: .65rem 1rem; border-radius: 13px; color: var(--muted); text-align: center; text-decoration: none; font-size: .84rem; font-weight: 800; }
+.mode-tabs a[aria-current="page"] { color: var(--paper); background: var(--green); box-shadow: 0 4px 0 var(--green-dark); }
 .leaderboard-table-wrapper { overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--line); border-radius: 16px; }
 .leaderboard-table { border-collapse: collapse; width: 100%; text-align: left; font-size: .88rem; font-variant-numeric: tabular-nums; }
 .leaderboard-table th, .leaderboard-table td { padding: .85rem 1rem; }
@@ -253,6 +257,14 @@ form > .primary-button { margin-top: .8rem; width: 100%; }
 .result-win { color: #285d3c; background: #e5f3de; }
 .result-loss { color: #813c39; background: #ffeae3; }
 .result-draw { color: #6f5818; background: #fff2c6; }
+.game-mode-badge { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; font-size: .72rem; font-weight: 800; padding: .28rem .55rem; border-radius: 999px; }
+.game-mode-badge::before { content: ''; width: .45rem; height: .45rem; border-radius: 50%; background: currentColor; opacity: .7; }
+.mode-ai { color: #356c45; background: #e5f3de; }
+.mode-multiplayer { color: #27647c; background: #e1f2f8; }
+@media (max-width: 480px) {
+    .mode-tabs-three { grid-template-columns: 1fr; }
+    .mode-tabs a { min-height: 44px; padding: .55rem .4rem; font-size: .76rem; }
+}
 .pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; font-size: .85rem; }
 .guide-nav { margin-bottom: 2rem; }
 .tower-price { color: var(--green); font-size: .8rem; font-weight: 800; }

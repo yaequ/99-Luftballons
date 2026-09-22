@@ -6,6 +6,7 @@ require __DIR__ . '/auth.php';
 require_login();
 require __DIR__ . '/db.php';
 require __DIR__ . '/achievements.php';
+require_once __DIR__ . '/game-results-schema.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -35,8 +36,9 @@ if (!in_array($result, ['win', 'loss'], true)
     exit;
 }
 
+ensure_game_results_schema($pdo);
 $statement = $pdo->prepare(
-    'INSERT INTO game_results (user_id, result, duration_seconds, round_reached) VALUES (?, ?, ?, ?)'
+    "INSERT INTO game_results (user_id, result, game_mode, duration_seconds, round_reached) VALUES (?, ?, 'ai', ?, ?)"
 );
 $statement->execute([$_SESSION['user_id'], $result, $duration, $roundReached]);
 

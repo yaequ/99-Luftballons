@@ -5,12 +5,13 @@ require __DIR__ . '/db.php';
 require __DIR__ . '/portal.php';
 $sort = option($_GET, 'sort', ['fastest','wins'], 'fastest');
 $period = option($_GET, 'period', ['all','week','month'], 'all');
+$mode = option($_GET, 'mode', ['ai','multiplayer'], 'ai');
 $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
-$board = rankings($pdo, $sort, $period, $userId);
+$board = rankings($pdo, $sort, $period, $userId, 10, $mode);
 $entries = $board['entries'];
 $mine = $board['mine'];
-function board_url(string $sort, string $period): string {
-    return 'leaderboard.php?' . escape(http_build_query(['sort'=>$sort, 'period'=>$period]));
+function board_url(string $sort, string $period, string $mode): string {
+    return 'leaderboard.php?' . escape(http_build_query(['mode'=>$mode, 'sort'=>$sort, 'period'=>$period]));
 }
 ?>
 <!DOCTYPE html><html lang="de">
@@ -19,17 +20,21 @@ function board_url(string $sort, string $period): string {
 <main id="main-content" class="portal-shell">
     <div class="page-heading"><p class="eyebrow">Bestenliste</p><h1>Die besten Ballonjäger</h1><p class="card-intro">Große Siege. Schnelle Runden. Ein Platz ganz oben.</p></div>
     <section class="portal-panel">
+        <nav class="mode-tabs" aria-label="Bestenliste nach Spielmodus">
+            <a href="<?= board_url($sort, $period, 'ai') ?>"<?= $mode === 'ai' ? ' aria-current="page"' : '' ?>>Gegen KI</a>
+            <a href="<?= board_url($sort, $period, 'multiplayer') ?>"<?= $mode === 'multiplayer' ? ' aria-current="page"' : '' ?>>Multiplayer</a>
+        </nav>
         <nav class="leaderboard-tabs" aria-label="Rangliste sortieren">
-            <a class="<?= $sort === 'fastest' ? 'active' : '' ?>" <?= $sort === 'fastest' ? 'aria-current="page"' : '' ?> href="<?= board_url('fastest', $period) ?>">Schnellste Sieger</a>
-            <a class="<?= $sort === 'wins' ? 'active' : '' ?>" <?= $sort === 'wins' ? 'aria-current="page"' : '' ?> href="<?= board_url('wins', $period) ?>">Meiste Siege</a>
+            <a class="<?= $sort === 'fastest' ? 'active' : '' ?>" <?= $sort === 'fastest' ? 'aria-current="page"' : '' ?> href="<?= board_url('fastest', $period, $mode) ?>">Schnellste Sieger</a>
+            <a class="<?= $sort === 'wins' ? 'active' : '' ?>" <?= $sort === 'wins' ? 'aria-current="page"' : '' ?> href="<?= board_url('wins', $period, $mode) ?>">Meiste Siege</a>
         </nav>
         <nav class="filter-pills" aria-label="Zeitraum">
             <?php foreach (['all'=>'Gesamt','week'=>'Diese Woche','month'=>'Dieser Monat'] as $value=>$label): ?>
-            <a href="<?= board_url($sort, $value) ?>"<?= $period === $value ? ' aria-current="page"' : '' ?>><?= $label ?></a>
+            <a href="<?= board_url($sort, $value, $mode) ?>"<?= $period === $value ? ' aria-current="page"' : '' ?>><?= $label ?></a>
             <?php endforeach; ?>
         </nav>
         <?php podium($entries, $sort); ?>
-        <p class="ranking-note">Ein Eintrag pro Spieler. <?= $sort === 'wins' ? 'Bei gleicher Siegzahl entscheidet die schnellere Bestzeit.' : 'Gewertet wird der schnellste Sieg im gewählten Zeitraum.' ?> Bei identischen Werten entscheidet die Spieler-ID. Wochen beginnen montags; Zeiträume richten sich nach der Datenbankzeit.</p>
+        <p class="ranking-note"><strong><?= $mode === 'multiplayer' ? 'Online-Duelle' : 'Spiele gegen die KI' ?>:</strong> Ein Eintrag pro Spieler. <?= $sort === 'wins' ? 'Bei gleicher Siegzahl entscheidet die schnellere Bestzeit.' : 'Gewertet wird der schnellste Sieg im gewählten Zeitraum.' ?> Bei identischen Werten entscheidet die Spieler-ID. Wochen beginnen montags; Zeiträume richten sich nach der Datenbankzeit.</p>
         <?php if ($mine): ?>
         <div class="own-rank"><strong>Dein Platz: #<?= (int) $mine['rank'] ?></strong><span><?= (int) $mine['wins'] ?> Siege · Bestzeit <?= duration((int) $mine['best']) ?></span></div>
         <?php elseif ($userId !== null): ?><p class="message">Du hast in diesem Zeitraum noch keinen gespeicherten Sieg.</p><?php else: ?><p class="message"><a href="login.php">Melde dich an</a>, um deine eigene Platzierung zu sehen.</p><?php endif; ?>

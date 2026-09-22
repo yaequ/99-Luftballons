@@ -8,7 +8,7 @@ function check(bool $ok, string $message): void {
 }
 $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
 $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT, created_at TEXT)');
-$pdo->exec('CREATE TABLE game_results (id INTEGER PRIMARY KEY, user_id INTEGER, result TEXT, duration_seconds INTEGER, round_reached INTEGER, created_at TEXT)');
+$pdo->exec("CREATE TABLE game_results (id INTEGER PRIMARY KEY, user_id INTEGER, result TEXT, game_mode TEXT NOT NULL DEFAULT 'ai', duration_seconds INTEGER, round_reached INTEGER, created_at TEXT)");
 check(rankings($pdo)['entries'] === [], 'Empty leaderboard');
 check(player_stats($pdo, 1)['rate'] === null, 'No matches has no percentage');
 check(match_history($pdo, 1)['pages'] === 1, 'Empty history has a valid page');
@@ -44,6 +44,22 @@ check(match_history($pdo, 1, 'win')['total'] === 2, 'Win filter');
 $insert->execute([1,'draw',60,30,$now->format('Y-m-d H:i:s')]);
 check(match_history($pdo, 1, 'draw')['total'] === 1, 'Draw filter');
 check(match_history($pdo, 15)['total'] === 1, 'History is restricted to current user');
+$insertMode = $pdo->prepare('INSERT INTO game_results (user_id,result,game_mode,duration_seconds,round_reached,created_at) VALUES (?,?,?,?,?,?)');
+$insertMode->execute([1,'win','multiplayer',45,8,$now->format('Y-m-d H:i:s')]);
+$insertMode->execute([2,'loss','multiplayer',45,8,$now->format('Y-m-d H:i:s')]);
+check(match_history($pdo, 1, 'all', 1, 10, 'multiplayer')['total'] === 1, 'History isolates multiplayer matches');
+check(match_history($pdo, 1, 'all', 1, 10, 'ai')['total'] === 4, 'History keeps existing matches in AI mode');
+$multiplayerBoard = rankings($pdo, 'fastest', 'all', 1, 10, 'multiplayer');
+check(count($multiplayerBoard['entries']) === 1 && (int) $multiplayerBoard['mine']['rank'] === 1, 'Multiplayer leaderboard is independent from AI ranking');
+check(count(rankings($pdo, 'fastest', 'all', null, 10, 'ai')['entries']) === 10, 'AI leaderboard excludes multiplayer results');
+$legacyPdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
+$legacyPdo->exec('CREATE TABLE game_results (id INTEGER PRIMARY KEY, user_id INTEGER, result TEXT, duration_seconds INTEGER, round_reached INTEGER, created_at TEXT)');
+$legacyPdo->exec('CREATE TABLE multiplayer_result_records (match_id INTEGER, user_id INTEGER, game_result_id INTEGER)');
+$legacyPdo->exec("INSERT INTO game_results VALUES (1, 1, 'win', 30, 2, '2026-01-01 00:00:00'), (2, 1, 'loss', 40, 3, '2026-01-02 00:00:00')");
+$legacyPdo->exec('INSERT INTO multiplayer_result_records VALUES (1, 1, 2)');
+ensure_game_results_schema($legacyPdo);
+$migratedModes = $legacyPdo->query('SELECT game_mode FROM game_results ORDER BY id')->fetchAll(PDO::FETCH_COLUMN);
+check($migratedModes === ['ai', 'multiplayer'], 'Migration preserves AI history and recognizes existing multiplayer records');
 check(option(['sort'=>['wins']], 'sort', ['wins','fastest'], 'fastest') === 'fastest', 'Array query parameters are rejected safely');
 check(period_bounds('week', new DateTimeImmutable('2026-01-01')) === ['2025-12-29 00:00:00','2026-01-05 00:00:00'], 'Week boundary across year');
 check(period_bounds('month', new DateTimeImmutable('2024-02-29')) === ['2024-02-01 00:00:00','2024-03-01 00:00:00'], 'Leap-month boundaries');
@@ -63,15 +79,15 @@ $fixtures = [
         ['code'=>'first_match','name'=>'Feuerprobe','description'=>'Test','icon'=>'assets/img/achievements/achievement-first-match.png','unlocked_at'=>'2026-01-01 12:00:00','current'=>1,'target'=>1],
         ['code'=>'veteran','name'=>'Veteran','description'=>'Test','icon'=>'assets/img/achievements/achievement-veteran.png','unlocked_at'=>null,'current'=>3,'target'=>25],
     ]],
-    'history.php' => ['filter'=>'all', 'history'=>$first, 'best'=>10],
+    'history.php' => ['mode'=>'all', 'filter'=>'all', 'history'=>$first, 'best'=>10],
     'game.php' => [],
-    'leaderboard.php' => ['sort'=>'fastest', 'period'=>'all', 'userId'=>15, 'board'=>$board, 'entries'=>$board['entries'], 'mine'=>$board['mine']],
+    'leaderboard.php' => ['mode'=>'ai', 'sort'=>'fastest', 'period'=>'all', 'userId'=>15, 'board'=>$board, 'entries'=>$board['entries'], 'mine'=>$board['mine']],
     'instructions.php' => [],
     'imprint.php' => [],
     'privacy.php' => [],
 ];
 // Defined in leaderboard.php's controller, skipped when testing the template only.
-function board_url(string $sort, string $period): string { return 'leaderboard.php?' . escape(http_build_query(['sort'=>$sort,'period'=>$period])); }
+function board_url(string $sort, string $period, string $mode): string { return 'leaderboard.php?' . escape(http_build_query(['mode'=>$mode,'sort'=>$sort,'period'=>$period])); }
 foreach ($fixtures as $file => $vars) {
     $render = static function () use ($file, $vars) {
         extract($vars);

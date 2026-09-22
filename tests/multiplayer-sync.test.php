@@ -17,7 +17,7 @@ $pdo = new PDO('sqlite::memory:', null, null, [
 ]);
 $pdo->exec('PRAGMA foreign_keys = ON');
 $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT NOT NULL UNIQUE)');
-$pdo->exec('CREATE TABLE game_results (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, result TEXT NOT NULL, duration_seconds INTEGER NOT NULL, round_reached INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
+$pdo->exec("CREATE TABLE game_results (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, result TEXT NOT NULL, game_mode TEXT NOT NULL DEFAULT 'ai', duration_seconds INTEGER NOT NULL, round_reached INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)");
 $pdo->exec("INSERT INTO users (id, username) VALUES (1, 'Ada'), (2, 'Bert')");
 ensure_matchmaking_tables($pdo);
 $pdo->exec("INSERT INTO multiplayer_matches (id, player_one_id, player_two_id, status) VALUES (1, 1, 2, 'active')");
@@ -86,6 +86,7 @@ multiplayer_report_result($pdo, 1, 1, 'loss');
 $outcome = multiplayer_outcome($pdo, 1);
 sync_check($outcome !== null && $outcome['winner_side'] === 2 && $outcome['reported_by_side'] === 1, 'Reporting only the own destroyed base creates an unambiguous server result');
 sync_check((int) $pdo->query('SELECT COUNT(*) FROM game_results')->fetchColumn() === 2, 'A completed duel creates one history result for each player');
+sync_check((int) $pdo->query("SELECT COUNT(*) FROM game_results WHERE game_mode = 'multiplayer'")->fetchColumn() === 2, 'Duel results are explicitly marked as multiplayer matches');
 multiplayer_report_result($pdo, 1, 2, 'loss');
 sync_check(multiplayer_outcome($pdo, 1)['winner_side'] === 2, 'A simultaneous later report cannot replace the first committed result');
 sync_check((int) $pdo->query('SELECT COUNT(*) FROM game_results')->fetchColumn() === 2, 'Repeated result reports cannot duplicate player statistics');

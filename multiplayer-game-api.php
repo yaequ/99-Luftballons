@@ -14,9 +14,9 @@ header('Cache-Control: no-store');
 
 try {
     $userId = (int) $_SESSION['user_id'];
-    if ((int) ($_SESSION['multiplayer_sync_schema_version'] ?? 0) < 4) {
+    if ((int) ($_SESSION['multiplayer_sync_schema_version'] ?? 0) < 5) {
         ensure_multiplayer_sync_tables($pdo);
-        $_SESSION['multiplayer_sync_schema_version'] = 4;
+        $_SESSION['multiplayer_sync_schema_version'] = 5;
     }
     $input = $_SERVER['REQUEST_METHOD'] === 'POST' ? $_POST : $_GET;
     $matchId = filter_var($input['match_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);

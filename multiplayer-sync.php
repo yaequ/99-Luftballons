@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/game-results-schema.php';
+
 const MULTIPLAYER_EVENT_LIMIT = 200;
 
 function ensure_multiplayer_sync_tables(PDO $pdo): void
 {
+    ensure_game_results_schema($pdo);
     if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
         $pdo->exec("CREATE TABLE IF NOT EXISTS multiplayer_game_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,10 +111,6 @@ function ensure_multiplayer_sync_tables(PDO $pdo): void
         CONSTRAINT fk_multiplayer_result_game FOREIGN KEY (game_result_id) REFERENCES game_results(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-    $resultType = $pdo->query("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'game_results' AND COLUMN_NAME = 'result'")->fetchColumn();
-    if (is_string($resultType) && !str_contains($resultType, "'draw'")) {
-        $pdo->exec("ALTER TABLE game_results MODIFY result ENUM('win', 'loss', 'draw') NOT NULL");
-    }
 }
 
 function multiplayer_sync_match(PDO $pdo, int $matchId, int $userId, bool $lock = false): array
@@ -461,7 +460,7 @@ function multiplayer_save_results(PDO $pdo, array $match, int $matchId, ?int $wi
     $round = max(0, min(30, (int) ($snapshotState['currentRound'] ?? 0)));
     $players = [1 => (int) $match['player_one_id'], 2 => (int) $match['player_two_id']];
     $exists = $pdo->prepare('SELECT game_result_id FROM multiplayer_result_records WHERE match_id = ? AND user_id = ? LIMIT 1');
-    $insertResult = $pdo->prepare('INSERT INTO game_results (user_id, result, duration_seconds, round_reached) VALUES (?, ?, ?, ?)');
+    $insertResult = $pdo->prepare("INSERT INTO game_results (user_id, result, game_mode, duration_seconds, round_reached) VALUES (?, ?, 'multiplayer', ?, ?)");
     $insertLink = $pdo->prepare('INSERT INTO multiplayer_result_records (match_id, user_id, game_result_id) VALUES (?, ?, ?)');
     foreach ($players as $side => $playerId) {
         $exists->execute([$matchId, $playerId]);
