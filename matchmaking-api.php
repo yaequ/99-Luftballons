@@ -12,8 +12,11 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
 try {
-    ensure_matchmaking_tables($pdo);
     $userId = (int) $_SESSION['user_id'];
+    if ((int) ($_SESSION['matchmaking_schema_version'] ?? 0) < 2) {
+        ensure_matchmaking_tables($pdo);
+        $_SESSION['matchmaking_schema_version'] = 2;
+    }
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         matchmaking_cleanup($pdo);

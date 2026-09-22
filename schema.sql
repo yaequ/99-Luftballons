@@ -43,6 +43,20 @@ CREATE TABLE IF NOT EXISTS multiplayer_match_presence (
     INDEX idx_match_presence_seen (match_id, last_seen_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS multiplayer_match_state (
+    match_id BIGINT UNSIGNED PRIMARY KEY,
+    round_number TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    total_rounds TINYINT UNSIGNED NOT NULL DEFAULT 30,
+    player_one_hp TINYINT UNSIGNED NOT NULL DEFAULT 99,
+    player_one_gold INT UNSIGNED NOT NULL DEFAULT 100,
+    player_one_income INT UNSIGNED NOT NULL DEFAULT 5,
+    player_two_hp TINYINT UNSIGNED NOT NULL DEFAULT 99,
+    player_two_gold INT UNSIGNED NOT NULL DEFAULT 100,
+    player_two_income INT UNSIGNED NOT NULL DEFAULT 5,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_match_state_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS game_results (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NOT NULL,

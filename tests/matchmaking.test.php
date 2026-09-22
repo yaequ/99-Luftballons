@@ -38,6 +38,9 @@ matchmaking_check($firstStatus['state'] === 'matched', 'The waiting player sees 
 matchmaking_check($firstStatus['opponent'] === 'Bert' && $second['opponent'] === 'Ada', 'Both players see the correct opponent');
 matchmaking_check(str_starts_with($firstStatus['opponent_avatar'], 'assets/img/avatars/'), 'The opponent uses a safe preset avatar');
 matchmaking_check(in_array($firstStatus['side'], [1, 2], true) && $firstStatus['side'] !== $second['side'], 'The two match sides are assigned exactly once');
+matchmaking_check($firstStatus['game_state']['round'] === 0 && $firstStatus['game_state']['total_rounds'] === 30, 'A multiplayer match starts at round zero of thirty');
+matchmaking_check($firstStatus['game_state']['you'] === $firstStatus['game_state']['opponent'], 'Both players start with identical server-side resources');
+matchmaking_check($firstStatus['game_state']['you'] === ['hp'=>99, 'gold'=>100, 'income'=>5], 'The server provides the intended multiplayer start values');
 matchmaking_check((int) $pdo->query('SELECT COUNT(*) FROM matchmaking_queue')->fetchColumn() === 0, 'Matched players are removed from the queue');
 
 $firstReady = ready_multiplayer_match($pdo, 1);

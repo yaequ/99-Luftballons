@@ -41,6 +41,19 @@ function ensure_matchmaking_tables(PDO $pdo): void
             FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS multiplayer_match_state (
+            match_id INTEGER PRIMARY KEY,
+            round_number INTEGER NOT NULL DEFAULT 0,
+            total_rounds INTEGER NOT NULL DEFAULT 30,
+            player_one_hp INTEGER NOT NULL DEFAULT 99,
+            player_one_gold INTEGER NOT NULL DEFAULT 100,
+            player_one_income INTEGER NOT NULL DEFAULT 5,
+            player_two_hp INTEGER NOT NULL DEFAULT 99,
+            player_two_gold INTEGER NOT NULL DEFAULT 100,
+            player_two_income INTEGER NOT NULL DEFAULT 5,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
+        )");
         return;
     }
 
@@ -78,6 +91,20 @@ function ensure_matchmaking_tables(PDO $pdo): void
         CONSTRAINT fk_match_presence_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         INDEX idx_match_presence_seen (match_id, last_seen_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS multiplayer_match_state (
+        match_id BIGINT UNSIGNED PRIMARY KEY,
+        round_number TINYINT UNSIGNED NOT NULL DEFAULT 0,
+        total_rounds TINYINT UNSIGNED NOT NULL DEFAULT 30,
+        player_one_hp TINYINT UNSIGNED NOT NULL DEFAULT 99,
+        player_one_gold INT UNSIGNED NOT NULL DEFAULT 100,
+        player_one_income INT UNSIGNED NOT NULL DEFAULT 5,
+        player_two_hp TINYINT UNSIGNED NOT NULL DEFAULT 99,
+        player_two_gold INT UNSIGNED NOT NULL DEFAULT 100,
+        player_two_income INT UNSIGNED NOT NULL DEFAULT 5,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT fk_match_state_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 }
 
 function matchmaking_cleanup(PDO $pdo, int $staleSeconds = MATCHMAKING_STALE_SECONDS): void
@@ -102,6 +129,14 @@ function ensure_match_presence(PDO $pdo, int $matchId, array $playerIds): void
     foreach ($playerIds as $playerId) {
         $insert->execute([$matchId, (int) $playerId]);
     }
+}
+
+function ensure_multiplayer_match_state(PDO $pdo, int $matchId): void
+{
+    $query = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+        ? $pdo->prepare('INSERT OR IGNORE INTO multiplayer_match_state (match_id) VALUES (?)')
+        : $pdo->prepare('INSERT IGNORE INTO multiplayer_match_state (match_id) VALUES (?)');
+    $query->execute([$matchId]);
 }
 
 function match_starts_in_ms(PDO $pdo, int $matchId): int
@@ -136,6 +171,7 @@ function matchmaking_status(PDO $pdo, int $userId, bool $touchQueue = false): ar
             ? (int) $match['player_two_id']
             : (int) $match['player_one_id'];
         ensure_match_presence($pdo, $matchId, [(int) $match['player_one_id'], (int) $match['player_two_id']]);
+        ensure_multiplayer_match_state($pdo, $matchId);
 
         if ($touchQueue) {
             $touch = $pdo->prepare('UPDATE multiplayer_match_presence SET last_seen_at = CURRENT_TIMESTAMP WHERE match_id = ? AND user_id = ?');
@@ -165,6 +201,11 @@ function matchmaking_status(PDO $pdo, int $userId, bool $touchQueue = false): ar
             ? ($startsInMs > 0 ? 'starting' : 'active')
             : 'matched';
         $opponentAvatar = avatar_data((string) $match['opponent_avatar_code']);
+        $gameStateQuery = $pdo->prepare('SELECT * FROM multiplayer_match_state WHERE match_id = ? LIMIT 1');
+        $gameStateQuery->execute([$matchId]);
+        $gameState = $gameStateQuery->fetch();
+        $ownPrefix = (int) $match['player_one_id'] === $userId ? 'player_one_' : 'player_two_';
+        $opponentPrefix = $ownPrefix === 'player_one_' ? 'player_two_' : 'player_one_';
         return [
             'state' => $state,
             'match_id' => $matchId,
@@ -175,6 +216,20 @@ function matchmaking_status(PDO $pdo, int $userId, bool $touchQueue = false): ar
             'opponent_ready' => $ready[$opponentId] ?? false,
             'starts_in_ms' => $startsInMs,
             'redirect_url' => 'multiplayer-match.php?match=' . $matchId,
+            'game_state' => [
+                'round' => (int) $gameState['round_number'],
+                'total_rounds' => (int) $gameState['total_rounds'],
+                'you' => [
+                    'hp' => (int) $gameState[$ownPrefix . 'hp'],
+                    'gold' => (int) $gameState[$ownPrefix . 'gold'],
+                    'income' => (int) $gameState[$ownPrefix . 'income'],
+                ],
+                'opponent' => [
+                    'hp' => (int) $gameState[$opponentPrefix . 'hp'],
+                    'gold' => (int) $gameState[$opponentPrefix . 'gold'],
+                    'income' => (int) $gameState[$opponentPrefix . 'income'],
+                ],
+            ],
         ];
     }
 
@@ -233,6 +288,7 @@ function join_matchmaking(PDO $pdo, int $userId): array
         $createMatch->execute($players);
         $matchId = (int) $pdo->lastInsertId();
         ensure_match_presence($pdo, $matchId, $players);
+        ensure_multiplayer_match_state($pdo, $matchId);
 
         $removeQueue = $pdo->prepare('DELETE FROM matchmaking_queue WHERE user_id IN (?, ?)');
         $removeQueue->execute([$userId, (int) $opponentId]);

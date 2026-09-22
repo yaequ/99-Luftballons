@@ -8,9 +8,29 @@
     const csrfToken = shell.dataset.csrfToken;
     const matchId = Number(shell.dataset.matchId);
     const leaveButton = document.getElementById('leave-online-match');
-    const switchToAi = document.getElementById('switch-to-ai');
+    const homeLink = document.getElementById('leave-to-home');
     const connectionStatus = document.getElementById('connection-status');
+    const connectionLabel = document.getElementById('connection-label');
     let pollTimer = 0;
+
+    function updateHealth(prefix, value) {
+        const health = Math.max(0, Math.min(99, Number(value) || 0));
+        document.getElementById(`${prefix}-hp`).textContent = `${health} / 99`;
+        const meter = document.getElementById(`${prefix}-health`);
+        meter.setAttribute('aria-valuenow', String(health));
+        meter.querySelector('i').style.width = `${health / 99 * 100}%`;
+    }
+
+    function applyGameState(gameState) {
+        if (!gameState) return;
+        document.getElementById('match-round').textContent = `${gameState.round}/${gameState.total_rounds}`;
+        document.getElementById('your-gold').textContent = gameState.you.gold;
+        document.getElementById('your-income').textContent = `+${gameState.you.income} Gold/s`;
+        updateHealth('your', gameState.you.hp);
+        document.getElementById('opponent-gold').textContent = gameState.opponent.gold;
+        document.getElementById('opponent-income').textContent = `+${gameState.opponent.income} Gold/s`;
+        updateHealth('opponent', gameState.opponent.hp);
+    }
 
     async function poll() {
         try {
@@ -22,17 +42,18 @@
                 return;
             }
             connectionStatus.classList.remove('is-offline');
-            connectionStatus.lastChild.textContent = ' Verbindung aktiv';
+            connectionLabel.textContent = 'Verbindung aktiv';
+            applyGameState(status.game_state);
         } catch {
             connectionStatus.classList.add('is-offline');
-            connectionStatus.lastChild.textContent = ' Verbindung wird wiederhergestellt …';
+            connectionLabel.textContent = 'Verbindung wird wiederhergestellt …';
         }
         pollTimer = window.setTimeout(poll, 2000);
     }
 
     async function leaveMatch(destination) {
         leaveButton.disabled = true;
-        switchToAi.setAttribute('aria-disabled', 'true');
+        homeLink.setAttribute('aria-disabled', 'true');
         const body = new URLSearchParams({ action: 'leave', csrf_token: csrfToken });
         try {
             await fetch(apiUrl, {
@@ -47,9 +68,9 @@
     }
 
     leaveButton.addEventListener('click', () => leaveMatch('game.php'));
-    switchToAi.addEventListener('click', (event) => {
+    homeLink.addEventListener('click', (event) => {
         event.preventDefault();
-        leaveMatch(switchToAi.href);
+        leaveMatch(homeLink.href);
     });
 
     window.addEventListener('pagehide', () => window.clearTimeout(pollTimer));
