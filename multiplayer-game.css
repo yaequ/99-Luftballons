@@ -67,8 +67,10 @@ button:focus-visible, a:focus-visible { outline: 3px solid #d58b2d; outline-offs
 .mp-map-card header strong { font-family: var(--mp-heading); font-size: 18px; }
 .mp-map-card header b { padding: 6px 10px; border-radius: 999px; background: #ddefd8; color: var(--mp-green); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; }
 .mp-map-card--opponent header b { background: #f8dfda; color: #a74a45; }
-.mp-map-image { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #dce8d6; }
-.mp-map-image img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; image-rendering: auto; }
+.mp-map-image { position: relative; overflow: hidden; background: #dce8d6; }
+.mp-map-image--frost { aspect-ratio: 1440 / 1027; }
+.mp-map-image--woodland { aspect-ratio: 1024 / 727; }
+.mp-map-image img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center bottom; image-rendering: auto; }
 .mp-map-card > footer { display: grid; grid-template-columns: auto minmax(150px, 1fr); align-items: center; gap: 14px; padding: 11px 15px; }
 .mp-map-card footer span, .mp-map-card footer strong { display: block; }
 .mp-map-card footer span { color: var(--mp-muted); font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .09em; }

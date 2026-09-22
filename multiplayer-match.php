@@ -25,8 +25,8 @@ $playerAvatar = avatar_data(user_avatar_code($pdo, $userId));
 $gameState = $status['game_state'];
 $side = (int) $status['side'];
 $maps = [
-    1 => ['name' => 'Frostpfad', 'image' => 'game/assets/Maps/image2.webp'],
-    2 => ['name' => 'Waldweg', 'image' => 'game/assets/Maps/Grafik.webp'],
+    1 => ['id' => 'frost', 'name' => 'Frostpfad', 'image' => 'game/assets/Maps/image2.webp', 'width' => 1440, 'height' => 1080],
+    2 => ['id' => 'woodland', 'name' => 'Waldweg', 'image' => 'game/assets/Maps/Grafik.webp', 'width' => 1024, 'height' => 765],
 ];
 $playerMap = $maps[$side];
 $opponentMap = $maps[$side === 1 ? 2 : 1];
@@ -37,7 +37,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online-Match – 99 Luftballons</title>
-    <link rel="stylesheet" href="multiplayer-game.css?v=multiplayer-ui-1">
+    <link rel="stylesheet" href="multiplayer-game.css?v=multiplayer-ui-2">
 </head>
 <body class="multiplayer-game-page">
     <main id="main-content" class="multiplayer-match-shell"
@@ -74,12 +74,12 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
         <section class="mp-map-grid" aria-label="Spielfelder">
             <article class="mp-map-card">
                 <header><div><span>Deine Karte</span><strong><?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?></strong></div><b>Verteidigen</b></header>
-                <div class="mp-map-image"><img src="<?= htmlspecialchars($playerMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Deine Karte <?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="1440" height="1080"></div>
+                <div class="mp-map-image mp-map-image--<?= $playerMap['id'] ?>"><img src="<?= htmlspecialchars($playerMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Deine Karte <?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="<?= $playerMap['width'] ?>" height="<?= $playerMap['height'] ?>"></div>
                 <footer><div><span>Deine Lebenspunkte</span><strong id="your-hp"><?= (int) $gameState['you']['hp'] ?> / 99</strong></div><div class="mp-health" id="your-health" role="progressbar" aria-label="Deine Lebenspunkte" aria-valuemin="0" aria-valuemax="99" aria-valuenow="<?= (int) $gameState['you']['hp'] ?>"><i style="width: <?= min(100, max(0, (int) $gameState['you']['hp'] / 99 * 100)) ?>%"></i></div></footer>
             </article>
             <article class="mp-map-card mp-map-card--opponent">
                 <header><div><span>Karte von <?= htmlspecialchars((string) $status['opponent'], ENT_QUOTES, 'UTF-8') ?></span><strong><?= htmlspecialchars($opponentMap['name'], ENT_QUOTES, 'UTF-8') ?></strong></div><b>Angreifen</b></header>
-                <div class="mp-map-image"><img src="<?= htmlspecialchars($opponentMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Karte des Gegners <?= htmlspecialchars($opponentMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="1024" height="765"></div>
+                <div class="mp-map-image mp-map-image--<?= $opponentMap['id'] ?>"><img src="<?= htmlspecialchars($opponentMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Karte des Gegners <?= htmlspecialchars($opponentMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="<?= $opponentMap['width'] ?>" height="<?= $opponentMap['height'] ?>"></div>
                 <footer><div><span>Gegnerische Lebenspunkte</span><strong id="opponent-hp"><?= (int) $gameState['opponent']['hp'] ?> / 99</strong></div><div class="mp-health" id="opponent-health" role="progressbar" aria-label="Lebenspunkte des Gegners" aria-valuemin="0" aria-valuemax="99" aria-valuenow="<?= (int) $gameState['opponent']['hp'] ?>"><i style="width: <?= min(100, max(0, (int) $gameState['opponent']['hp'] / 99 * 100)) ?>%"></i></div></footer>
             </article>
         </section>
