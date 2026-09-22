@@ -68,14 +68,15 @@
 
 .mp-canvas-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
     gap: 1px;
     border-top: 1px solid var(--mp-line);
     background: var(--mp-line);
 }
 
 .mp-tower-panel,
-.mp-next-panel { min-width: 0; padding: 18px 20px; background: var(--mp-paper); }
+.mp-next-panel,
+.mp-attack-panel { min-width: 0; padding: 18px 20px; background: var(--mp-paper); }
 
 .mp-control-heading {
     display: flex;
@@ -86,7 +87,8 @@
 }
 
 .mp-control-heading h1,
-.mp-next-panel h2 { margin: 0; font-family: var(--mp-heading); font-size: 20px; }
+.mp-next-panel h2,
+.mp-attack-panel h2 { margin: 0; font-family: var(--mp-heading); font-size: 20px; }
 .mp-control-heading p { margin: 0; color: var(--mp-muted); font-size: 10px; }
 
 .mp-tower-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
@@ -117,6 +119,43 @@
 .mp-tower-card em { width: fit-content; display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; padding: 3px 8px 3px 5px; border: 1px solid #ead7aa; border-radius: 999px; background: #fff8dc; color: #9b6411; font-size: 11px; font-style: normal; font-weight: 900; }
 .mp-tower-card em img { width: 18px; height: 18px; object-fit: contain; }
 
+.mp-attack-panel .mp-kicker { color: var(--mp-red); }
+.mp-balloon-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.mp-balloon-card {
+    min-width: 0;
+    min-height: 104px;
+    display: grid;
+    grid-template-columns: 43px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    padding: 8px;
+    border: 1px solid var(--mp-line);
+    border-radius: 15px;
+    background: var(--mp-soft);
+    color: var(--mp-ink);
+    cursor: pointer;
+    text-align: left;
+}
+.mp-balloon-card:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--mp-green-bright); }
+.mp-balloon-card:disabled { cursor: not-allowed; filter: grayscale(.75); opacity: .5; }
+.mp-balloon-card > canvas { width: 43px; height: 55px; image-rendering: pixelated; }
+.mp-balloon-card > span { min-width: 0; display: grid; gap: 2px; }
+.mp-balloon-card strong { font-size: 12px; }
+.mp-balloon-card small { color: var(--mp-muted); font-size: 8px; white-space: nowrap; }
+.mp-balloon-card em { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; margin-top: 3px; color: #9b6411; font-size: 9px; font-style: normal; font-weight: 900; }
+.mp-balloon-card em img { width: 16px; height: 16px; object-fit: contain; }
+.mp-balloon-card em b { padding: 3px 5px; border-radius: 999px; background: #ddefd8; color: var(--mp-green); font-size: 8px; white-space: nowrap; }
+
+.mp-local-round-controls { display: grid; grid-template-columns: 120px minmax(190px, 1fr) 110px; gap: 8px; margin-top: 11px; }
+.mp-local-round-controls label,
+.mp-local-round-controls button { min-height: 42px; display: flex; align-items: center; justify-content: center; padding: 8px 10px; border: 1px solid var(--mp-line); border-radius: 12px; background: var(--mp-soft); color: var(--mp-ink); font-size: 10px; font-weight: 900; }
+.mp-local-round-controls label { gap: 6px; color: var(--mp-green); cursor: pointer; }
+.mp-local-round-controls input { accent-color: var(--mp-green); }
+.mp-local-round-controls button { cursor: pointer; }
+.mp-local-round-controls button:disabled { cursor: not-allowed; filter: grayscale(.7); opacity: .55; }
+.mp-local-round-controls .mp-local-primary { border-color: #347349; background: linear-gradient(#58a564, #387c4d); color: #fff; box-shadow: 0 3px 0 #28623d; }
+.mp-local-status { min-height: 15px; margin: 9px 0 0; color: var(--mp-muted); font-size: 9px; line-height: 1.35; text-align: center; }
+
 .mp-next-panel { display: grid; align-content: center; }
 .mp-next-panel p { margin: 8px 0 13px; color: var(--mp-muted); font-size: 11px; line-height: 1.45; }
 .mp-next-panel > div { display: flex; gap: 8px; }
@@ -129,5 +168,7 @@
 @media (max-width: 650px) {
     .mp-control-heading { align-items: start; flex-direction: column; }
     .mp-tower-grid { grid-template-columns: 1fr; }
+    .mp-balloon-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mp-local-round-controls { grid-template-columns: 1fr; }
     .mp-next-panel > div { flex-direction: column; }
 }
