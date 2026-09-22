@@ -13,9 +13,9 @@ header('Cache-Control: no-store');
 
 try {
     $userId = (int) $_SESSION['user_id'];
-    if ((int) ($_SESSION['matchmaking_schema_version'] ?? 0) < 2) {
+    if ((int) ($_SESSION['matchmaking_schema_version'] ?? 0) < 3) {
         ensure_matchmaking_tables($pdo);
-        $_SESSION['matchmaking_schema_version'] = 2;
+        $_SESSION['matchmaking_schema_version'] = 3;
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -44,6 +44,16 @@ try {
         $result = ready_multiplayer_match($pdo, $userId);
     } elseif ($action === 'leave') {
         $result = leave_matchmaking($pdo, $userId);
+    } elseif ($action === 'build_tower') {
+        $towerType = is_string($_POST['tower_type'] ?? null) ? $_POST['tower_type'] : '';
+        $slot = filter_var($_POST['slot'] ?? null, FILTER_VALIDATE_INT);
+        if ($slot === false) throw new InvalidArgumentException('Ungültiger Bauplatz.');
+        $result = multiplayer_build_tower($pdo, $userId, $towerType, (int) $slot);
+    } elseif ($action === 'send_balloons') {
+        $balloonType = is_string($_POST['balloon_type'] ?? null) ? $_POST['balloon_type'] : '';
+        $result = multiplayer_send_balloons($pdo, $userId, $balloonType);
+    } elseif ($action === 'start_round') {
+        $result = multiplayer_start_round($pdo, $userId);
     } else {
         http_response_code(422);
         echo json_encode(['error' => 'Unbekannte Matchmaking-Aktion.'], JSON_THROW_ON_ERROR);
@@ -51,6 +61,9 @@ try {
     }
 
     echo json_encode($result, JSON_THROW_ON_ERROR);
+} catch (InvalidArgumentException | DomainException $error) {
+    http_response_code(422);
+    echo json_encode(['error' => $error->getMessage()], JSON_THROW_ON_ERROR);
 } catch (Throwable $error) {
     error_log('Matchmaking error: ' . $error->getMessage());
     http_response_code(500);

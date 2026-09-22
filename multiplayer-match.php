@@ -25,11 +25,20 @@ $playerAvatar = avatar_data(user_avatar_code($pdo, $userId));
 $gameState = $status['game_state'];
 $side = (int) $status['side'];
 $maps = [
-    1 => ['name' => 'Frostpfad', 'image' => 'game/assets/Maps/image2.webp'],
-    2 => ['name' => 'Waldweg', 'image' => 'game/assets/Maps/Grafik.webp'],
+    1 => ['id' => 'frost', 'name' => 'Frostpfad', 'image' => 'game/assets/Maps/image2.webp', 'width' => 1440, 'height' => 1080, 'crop' => 53,
+        'zones' => [[472,166,258,54],[322,377,273,53],[971,354,154,53],[104,518,48,176],[772,585,258,49],[1291,382,48,223],[846,780,147,139]]],
+    2 => ['id' => 'woodland', 'name' => 'Waldweg', 'image' => 'game/assets/Maps/Grafik.webp', 'width' => 1024, 'height' => 765, 'crop' => 38,
+        'zones' => [[302,136,204,38],[267,253,195,32],[725,255,85,33],[61,387,56,103],[521,409,186,33],[923,289,38,166],[206,656,269,27],[598,534,117,97]]],
 ];
 $playerMap = $maps[$side];
 $opponentMap = $maps[$side === 1 ? 2 : 1];
+$towerTypes = multiplayer_tower_types();
+$balloonTypes = multiplayer_balloon_types();
+$towerImages = [
+    'cactus' => 'game/assets/Charaktere/Kaktus/Kaktus/Segment 1.png',
+    'fan' => 'game/assets/Charaktere/Geblaese/Ballon Hunter/Ballon Hunter 1.png',
+    'lens' => 'game/assets/Charaktere/Lupe/Fliegerstaffel/Fliegerstaffel 1.png',
+];
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -37,7 +46,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online-Match – 99 Luftballons</title>
-    <link rel="stylesheet" href="multiplayer-game.css?v=multiplayer-ui-1">
+    <link rel="stylesheet" href="multiplayer-game.css?v=multiplayer-actions-1">
 </head>
 <body class="multiplayer-game-page">
     <main id="main-content" class="multiplayer-match-shell"
@@ -74,25 +83,55 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
         <section class="mp-map-grid" aria-label="Spielfelder">
             <article class="mp-map-card">
                 <header><div><span>Deine Karte</span><strong><?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?></strong></div><b>Verteidigen</b></header>
-                <div class="mp-map-image"><img src="<?= htmlspecialchars($playerMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Deine Karte <?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="1440" height="1080"></div>
+                <div class="mp-map-image mp-map-image--<?= $playerMap['id'] ?>" data-map-side="you"><img src="<?= htmlspecialchars($playerMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Deine Karte <?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="<?= $playerMap['width'] ?>" height="<?= $playerMap['height'] ?>">
+                    <div class="mp-map-overlay" aria-label="Bauplätze auf deiner Karte">
+                    <?php foreach ($playerMap['zones'] as $slot => [$x, $y, $width, $height]): ?>
+                        <button class="mp-build-slot" type="button" data-slot="<?= $slot ?>" aria-label="Bauplatz <?= $slot + 1 ?>" style="--slot-x:<?= $x / $playerMap['width'] * 100 ?>%;--slot-y:<?= ($y - $playerMap['crop']) / ($playerMap['height'] - $playerMap['crop']) * 100 ?>%;--slot-w:<?= $width / $playerMap['width'] * 100 ?>%;--slot-h:<?= $height / ($playerMap['height'] - $playerMap['crop']) * 100 ?>%"></button>
+                    <?php endforeach; ?>
+                    </div>
+                </div>
                 <footer><div><span>Deine Lebenspunkte</span><strong id="your-hp"><?= (int) $gameState['you']['hp'] ?> / 99</strong></div><div class="mp-health" id="your-health" role="progressbar" aria-label="Deine Lebenspunkte" aria-valuemin="0" aria-valuemax="99" aria-valuenow="<?= (int) $gameState['you']['hp'] ?>"><i style="width: <?= min(100, max(0, (int) $gameState['you']['hp'] / 99 * 100)) ?>%"></i></div></footer>
             </article>
             <article class="mp-map-card mp-map-card--opponent">
                 <header><div><span>Karte von <?= htmlspecialchars((string) $status['opponent'], ENT_QUOTES, 'UTF-8') ?></span><strong><?= htmlspecialchars($opponentMap['name'], ENT_QUOTES, 'UTF-8') ?></strong></div><b>Angreifen</b></header>
-                <div class="mp-map-image"><img src="<?= htmlspecialchars($opponentMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Karte des Gegners <?= htmlspecialchars($opponentMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="1024" height="765"></div>
+                <div class="mp-map-image mp-map-image--<?= $opponentMap['id'] ?>" data-map-side="opponent"><img src="<?= htmlspecialchars($opponentMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Karte des Gegners <?= htmlspecialchars($opponentMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="<?= $opponentMap['width'] ?>" height="<?= $opponentMap['height'] ?>">
+                    <div class="mp-map-overlay" aria-label="Verteidigung des Gegners">
+                    <?php foreach ($opponentMap['zones'] as $slot => [$x, $y, $width, $height]): ?>
+                        <span class="mp-build-slot mp-build-slot--opponent" data-slot="<?= $slot ?>" style="--slot-x:<?= $x / $opponentMap['width'] * 100 ?>%;--slot-y:<?= ($y - $opponentMap['crop']) / ($opponentMap['height'] - $opponentMap['crop']) * 100 ?>%;--slot-w:<?= $width / $opponentMap['width'] * 100 ?>%;--slot-h:<?= $height / ($opponentMap['height'] - $opponentMap['crop']) * 100 ?>%"></span>
+                    <?php endforeach; ?>
+                    </div>
+                </div>
                 <footer><div><span>Gegnerische Lebenspunkte</span><strong id="opponent-hp"><?= (int) $gameState['opponent']['hp'] ?> / 99</strong></div><div class="mp-health" id="opponent-health" role="progressbar" aria-label="Lebenspunkte des Gegners" aria-valuemin="0" aria-valuemax="99" aria-valuenow="<?= (int) $gameState['opponent']['hp'] ?>"><i style="width: <?= min(100, max(0, (int) $gameState['opponent']['hp'] / 99 * 100)) ?>%"></i></div></footer>
             </article>
         </section>
 
-        <section class="mp-action-preview" aria-labelledby="online-actions-title">
-            <div><span class="mp-kicker">Nächster Ausbauschritt</span><h1 id="online-actions-title">Online-Aktionen vorbereitet</h1><p>Die Oberfläche ist vollständig vom KI-Spiel getrennt. Turmbau, Ballons und Rundenstart werden erst in Paket 4 serverseitig synchronisiert.</p></div>
-            <div class="mp-disabled-actions" aria-label="Noch nicht verfügbare Online-Aktionen">
-                <button type="button" disabled>Turm bauen</button>
-                <button type="button" disabled>Ballons senden</button>
-                <button type="button" disabled>Runde starten</button>
+        <section class="mp-action-dock" aria-labelledby="online-actions-title">
+            <div class="mp-shop-panel">
+                <span class="mp-kicker">Verteidigung</span><h1 id="online-actions-title">Turm wählen</h1>
+                <div class="mp-shop-row" id="tower-shop">
+                <?php foreach ($towerTypes as $type => $tower): ?>
+                    <button class="mp-shop-card mp-tower-choice" type="button" data-tower="<?= $type ?>" data-cost="<?= $tower['cost'] ?>" aria-pressed="false"><img src="<?= htmlspecialchars($towerImages[$type], ENT_QUOTES, 'UTF-8') ?>" alt=""><span><strong><?= htmlspecialchars($tower['name'], ENT_QUOTES, 'UTF-8') ?></strong><small><img src="assets/img/goldnugget.png" alt=""><?= $tower['cost'] ?></small></span></button>
+                <?php endforeach; ?>
+                </div>
+                <p class="mp-shop-help" id="build-help">Turm auswählen und danach einen markierten Bauplatz anklicken.</p>
+            </div>
+            <div class="mp-shop-panel mp-shop-panel--attack">
+                <span class="mp-kicker">Angriff</span><h2>Ballons senden</h2>
+                <div class="mp-shop-row" id="balloon-shop">
+                <?php foreach ($balloonTypes as $type => $balloon): ?>
+                    <button class="mp-shop-card mp-balloon-choice" type="button" data-balloon="<?= $type ?>" data-cost="<?= $balloon['cost'] ?>"><img src="game/assets/Balloons/transparent/<?= $type ?>/balloon_<?= $type ?>_frame_01.png" alt=""><span><strong><?= htmlspecialchars($balloon['name'], ENT_QUOTES, 'UTF-8') ?></strong><small><img src="assets/img/goldnugget.png" alt=""><?= $balloon['cost'] ?> · +<?= $balloon['income'] ?>/s</small></span></button>
+                <?php endforeach; ?>
+                </div>
+                <p class="mp-shop-help"><strong id="outgoing-attacks">0</strong> Angriffspakete für die nächste Runde vorbereitet.</p>
+            </div>
+            <div class="mp-round-actions">
+                <div class="mp-events"><strong>Live-Meldungen</strong><ul id="match-events"><li>Beide Seiten können handeln.</li></ul></div>
+                <button class="mp-button mp-button--start" id="start-online-round" type="button">Runde 1 bereit</button>
+                <p class="mp-action-feedback" id="action-feedback" role="status" aria-live="polite"></p>
             </div>
         </section>
     </main>
-    <script src="multiplayer-room.js?v=multiplayer-ui-1"></script>
+    <script id="multiplayer-assets" type="application/json"><?= json_encode(['towers' => $towerImages], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES) ?></script>
+    <script src="multiplayer-room.js?v=multiplayer-actions-1"></script>
 </body>
 </html>

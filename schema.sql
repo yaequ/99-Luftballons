@@ -57,6 +57,46 @@ CREATE TABLE IF NOT EXISTS multiplayer_match_state (
     CONSTRAINT fk_match_state_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS multiplayer_towers (
+    match_id BIGINT UNSIGNED NOT NULL,
+    player_side TINYINT UNSIGNED NOT NULL,
+    slot_index TINYINT UNSIGNED NOT NULL,
+    tower_type VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (match_id, player_side, slot_index),
+    CONSTRAINT fk_multiplayer_tower_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS multiplayer_attacks (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    match_id BIGINT UNSIGNED NOT NULL,
+    sender_side TINYINT UNSIGNED NOT NULL,
+    balloon_type VARCHAR(20) NOT NULL,
+    target_round TINYINT UNSIGNED NOT NULL,
+    resolved_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_multiplayer_attack_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE,
+    INDEX idx_multiplayer_attack_round (match_id, target_round, resolved_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS multiplayer_round_ready (
+    match_id BIGINT UNSIGNED NOT NULL,
+    player_side TINYINT UNSIGNED NOT NULL,
+    target_round TINYINT UNSIGNED NOT NULL,
+    ready_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (match_id, player_side),
+    CONSTRAINT fk_multiplayer_round_ready_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS multiplayer_events (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    match_id BIGINT UNSIGNED NOT NULL,
+    event_text VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_multiplayer_event_match FOREIGN KEY (match_id) REFERENCES multiplayer_matches(id) ON DELETE CASCADE,
+    INDEX idx_multiplayer_event_match (match_id, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS game_results (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NOT NULL,
