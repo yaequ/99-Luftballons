@@ -1,0 +1,133 @@
+.mp-map-canvas-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #dce8d6;
+    touch-action: none;
+}
+
+.mp-game-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    cursor: crosshair;
+}
+
+.mp-game-canvas--readonly { cursor: default; }
+
+.mp-canvas-status {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: #eaf2e4e8;
+    color: var(--mp-green);
+    font-weight: 900;
+    text-align: center;
+}
+
+.mp-canvas-status[hidden] { display: none; }
+.mp-canvas-status.is-error { color: #a43f38; background: #f9e4dfea; }
+
+.mp-map-tip {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    z-index: 3;
+    width: min(340px, calc(100% - 24px));
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 11px;
+    border: 1px solid #ffffff99;
+    border-radius: 13px;
+    background: #233f43e8;
+    color: #fff;
+    box-shadow: 0 6px 20px #102c3038;
+    font-size: 11px;
+    line-height: 1.3;
+    pointer-events: none;
+}
+
+.mp-map-tip b {
+    flex: 0 0 27px;
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    border-radius: 9px;
+    background: #bde8b8;
+    color: #28583a;
+}
+
+.mp-canvas-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
+    gap: 1px;
+    border-top: 1px solid var(--mp-line);
+    background: var(--mp-line);
+}
+
+.mp-tower-panel,
+.mp-next-panel { min-width: 0; padding: 18px 20px; background: var(--mp-paper); }
+
+.mp-control-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 11px;
+}
+
+.mp-control-heading h1,
+.mp-next-panel h2 { margin: 0; font-family: var(--mp-heading); font-size: 20px; }
+.mp-control-heading p { margin: 0; color: var(--mp-muted); font-size: 10px; }
+
+.mp-tower-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+
+.mp-tower-card {
+    min-width: 0;
+    min-height: 104px;
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 9px;
+    border: 1px solid var(--mp-line);
+    border-radius: 15px;
+    background: var(--mp-soft);
+    color: var(--mp-ink);
+    cursor: pointer;
+    text-align: left;
+}
+
+.mp-tower-card:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--mp-green-bright); }
+.mp-tower-card.is-selected { border-color: var(--mp-green); box-shadow: inset 0 0 0 2px var(--mp-green); }
+.mp-tower-card:disabled { cursor: not-allowed; filter: grayscale(.75); opacity: .52; }
+.mp-tower-card > canvas { width: 76px; height: 68px; border-radius: 11px; background: #e7ede1; image-rendering: pixelated; }
+.mp-tower-card > span { min-width: 0; display: grid; gap: 3px; }
+.mp-tower-card strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.mp-tower-card small { color: var(--mp-muted); font-size: 9px; }
+.mp-tower-card em { width: fit-content; display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; padding: 3px 8px 3px 5px; border: 1px solid #ead7aa; border-radius: 999px; background: #fff8dc; color: #9b6411; font-size: 11px; font-style: normal; font-weight: 900; }
+.mp-tower-card em img { width: 18px; height: 18px; object-fit: contain; }
+
+.mp-next-panel { display: grid; align-content: center; }
+.mp-next-panel p { margin: 8px 0 13px; color: var(--mp-muted); font-size: 11px; line-height: 1.45; }
+.mp-next-panel > div { display: flex; gap: 8px; }
+.mp-next-panel button { min-height: 42px; flex: 1; padding: 8px 10px; border: 1px solid var(--mp-line); border-radius: 12px; background: var(--mp-soft); color: var(--mp-muted); font-weight: 900; opacity: .65; }
+
+@media (max-width: 1000px) {
+    .mp-canvas-controls { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 650px) {
+    .mp-control-heading { align-items: start; flex-direction: column; }
+    .mp-tower-grid { grid-template-columns: 1fr; }
+    .mp-next-panel > div { flex-direction: column; }
+}

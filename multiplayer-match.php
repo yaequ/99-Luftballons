@@ -38,12 +38,16 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online-Match – 99 Luftballons</title>
     <link rel="stylesheet" href="multiplayer-game.css?v=multiplayer-ui-2">
+    <link rel="stylesheet" href="multiplayer-game/game.css?v=multiplayer-canvas-1">
 </head>
 <body class="multiplayer-game-page">
     <main id="main-content" class="multiplayer-match-shell"
           data-matchmaking-api="matchmaking-api.php"
           data-csrf-token="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>"
-          data-match-id="<?= $matchId ?>">
+          data-match-id="<?= $matchId ?>"
+          data-local-engine="true"
+          data-player-map="<?= $playerMap['id'] ?>"
+          data-opponent-map="<?= $opponentMap['id'] ?>">
         <header class="mp-topbar">
             <a class="mp-brand" id="leave-to-home" href="index.php" aria-label="Online-Match verlassen und zur Startseite"><img src="assets/img/branding/logo.png" alt="99 Luftballons" width="1024" height="512"></a>
             <div class="mp-match-label"><span>Online-Duell</span><strong>Match #<?= $matchId ?></strong></div>
@@ -74,25 +78,32 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
         <section class="mp-map-grid" aria-label="Spielfelder">
             <article class="mp-map-card">
                 <header><div><span>Deine Karte</span><strong><?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?></strong></div><b>Verteidigen</b></header>
-                <div class="mp-map-image mp-map-image--<?= $playerMap['id'] ?>"><img src="<?= htmlspecialchars($playerMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Deine Karte <?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="<?= $playerMap['width'] ?>" height="<?= $playerMap['height'] ?>"></div>
+                <div class="mp-map-canvas-stage"><canvas class="mp-game-canvas" id="multiplayer-player-canvas" width="960" height="720" tabindex="0" aria-label="Deine Karte <?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?>. Nach der Turmauswahl mit Maus oder Pfeiltasten platzieren."></canvas><div class="mp-canvas-status" id="multiplayer-canvas-status">Spielgrafiken werden geladen …</div><div class="mp-map-tip" id="multiplayer-map-tip"><b>1</b><span>Turm auswählen und auf einer dunklen Baufläche platzieren.</span></div></div>
                 <footer><div><span>Deine Lebenspunkte</span><strong id="your-hp"><?= (int) $gameState['you']['hp'] ?> / 99</strong></div><div class="mp-health" id="your-health" role="progressbar" aria-label="Deine Lebenspunkte" aria-valuemin="0" aria-valuemax="99" aria-valuenow="<?= (int) $gameState['you']['hp'] ?>"><i style="width: <?= min(100, max(0, (int) $gameState['you']['hp'] / 99 * 100)) ?>%"></i></div></footer>
             </article>
             <article class="mp-map-card mp-map-card--opponent">
                 <header><div><span>Karte von <?= htmlspecialchars((string) $status['opponent'], ENT_QUOTES, 'UTF-8') ?></span><strong><?= htmlspecialchars($opponentMap['name'], ENT_QUOTES, 'UTF-8') ?></strong></div><b>Angreifen</b></header>
-                <div class="mp-map-image mp-map-image--<?= $opponentMap['id'] ?>"><img src="<?= htmlspecialchars($opponentMap['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Karte des Gegners <?= htmlspecialchars($opponentMap['name'], ENT_QUOTES, 'UTF-8') ?>" width="<?= $opponentMap['width'] ?>" height="<?= $opponentMap['height'] ?>"></div>
+                <div class="mp-map-canvas-stage"><canvas class="mp-game-canvas mp-game-canvas--readonly" id="multiplayer-opponent-canvas" width="960" height="720" aria-label="Karte des Gegners <?= htmlspecialchars($opponentMap['name'], ENT_QUOTES, 'UTF-8') ?>"></canvas></div>
                 <footer><div><span>Gegnerische Lebenspunkte</span><strong id="opponent-hp"><?= (int) $gameState['opponent']['hp'] ?> / 99</strong></div><div class="mp-health" id="opponent-health" role="progressbar" aria-label="Lebenspunkte des Gegners" aria-valuemin="0" aria-valuemax="99" aria-valuenow="<?= (int) $gameState['opponent']['hp'] ?>"><i style="width: <?= min(100, max(0, (int) $gameState['opponent']['hp'] / 99 * 100)) ?>%"></i></div></footer>
             </article>
         </section>
 
-        <section class="mp-action-preview" aria-labelledby="online-actions-title">
-            <div><span class="mp-kicker">Nächster Ausbauschritt</span><h1 id="online-actions-title">Online-Aktionen vorbereitet</h1><p>Die Oberfläche ist vollständig vom KI-Spiel getrennt. Turmbau, Ballons und Rundenstart werden erst in Paket 4 serverseitig synchronisiert.</p></div>
-            <div class="mp-disabled-actions" aria-label="Noch nicht verfügbare Online-Aktionen">
-                <button type="button" disabled>Turm bauen</button>
-                <button type="button" disabled>Ballons senden</button>
-                <button type="button" disabled>Runde starten</button>
+        <section class="mp-canvas-controls" aria-labelledby="online-actions-title">
+            <div class="mp-tower-panel">
+                <div class="mp-control-heading"><div><span class="mp-kicker">Paket 4A · Verteidigung</span><h1 id="online-actions-title">Turm auswählen</h1></div><p>Identische Platzierung wie im KI-Spiel</p></div>
+                <div class="mp-tower-grid">
+                    <button class="mp-tower-card" data-tower="cactus" type="button" aria-pressed="false"><canvas data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span><strong>Kaktus</strong><small>Schneller Schaden</small><em><img src="assets/img/goldnugget.png" alt="">25</em></span></button>
+                    <button class="mp-tower-card" data-tower="fan" type="button" aria-pressed="false"><canvas data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span><strong>Gebläse</strong><small>Kurze Abklingzeit</small><em><img src="assets/img/goldnugget.png" alt="">45</em></span></button>
+                    <button class="mp-tower-card" data-tower="lens" type="button" aria-pressed="false"><canvas data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span><strong>Lupe</strong><small>Hoher Schaden</small><em><img src="assets/img/goldnugget.png" alt="">70</em></span></button>
+                </div>
+            </div>
+            <div class="mp-next-panel">
+                <span class="mp-kicker">Bewusst noch gesperrt</span><h2>Ballons und Runden</h2><p>In 4A testen wir ausschließlich das echte Canvas und die Turmplatzierung. Sichtbare Ballons folgen in Paket 4B.</p>
+                <div><button type="button" disabled>Ballons senden</button><button type="button" disabled>Runde starten</button></div>
             </div>
         </section>
     </main>
-    <script src="multiplayer-room.js?v=multiplayer-ui-1"></script>
+    <script src="multiplayer-room.js?v=multiplayer-canvas-1"></script>
+    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-canvas-1"></script>
 </body>
 </html>

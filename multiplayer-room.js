@@ -11,6 +11,7 @@
     const homeLink = document.getElementById('leave-to-home');
     const connectionStatus = document.getElementById('connection-status');
     const connectionLabel = document.getElementById('connection-label');
+    const localEngine = shell.dataset.localEngine === 'true';
     let pollTimer = 0;
 
     function updateHealth(prefix, value) {
@@ -43,7 +44,8 @@
             }
             connectionStatus.classList.remove('is-offline');
             connectionLabel.textContent = 'Verbindung aktiv';
-            applyGameState(status.game_state);
+            if (!localEngine) applyGameState(status.game_state);
+            window.dispatchEvent(new CustomEvent('multiplayer:status', { detail: status }));
         } catch {
             connectionStatus.classList.add('is-offline');
             connectionLabel.textContent = 'Verbindung wird wiederhergestellt …';
