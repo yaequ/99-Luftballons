@@ -174,10 +174,6 @@ button:focus-visible, input:focus-visible, canvas:focus-visible, a:focus-visible
 .is-paused .maps-grid::after { content: "PAUSE"; position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; border-radius: 20px; background: #e8f2e4cf; color: var(--green); font-family: var(--heading); font-size: clamp(28px, 6vw, 64px); }
 
 /* Modals */
-.game-brand--offline { display: grid; justify-items: center; gap: 4px; text-decoration: none; color: var(--green); text-align: center; }
-.game-brand--offline strong { font-size: clamp(12px, 1.8vw, 20px); }
-.game-brand--offline small { color: var(--muted); font-size: 10px; font-weight: normal; }
-.offline-gold { display: inline-block; color: #bd7c0c; font-size: 18px; line-height: 1; }
 .tower-help { margin: 0; padding: 9px 12px; color: var(--muted); font-size: 12px; }
 .tower-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 12px; background: var(--green-soft); }
 .tower-actions[hidden] { display: none; }

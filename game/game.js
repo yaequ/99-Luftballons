@@ -222,7 +222,7 @@ async function startGame(retry = false) {
 function returnToHomepage() {
   gameState.active = false;
   cancelAnimationFrame(animationFrameId);
-  window.location.assign('index.html');
+  window.location.assign('../menu.php');
 }
 
 function setControlsExpanded(expanded) {
@@ -532,9 +532,31 @@ function checkGameOver() {
   else if (gameState.enemy.hp <= 0) endGame('win', 'Sieg', 'Der Gegner konnte deine Ballons nicht halten.');
 }
 
-function saveMatchResult() {
-  // Standalone file:// copy: no account, backend or online score submission.
+async function saveMatchResult(result) {
+  if (gameState.resultSubmitted) return;
   gameState.resultSubmitted = true;
+
+  try {
+    const response = await fetch('../save-match.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        result,
+        duration_seconds: Math.round(gameState.secondsElapsed),
+        round_reached: gameState.currentRound
+      }),
+      keepalive: true
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (!data.success) throw new Error('Match result was rejected');
+    if (Array.isArray(data.achievements) && data.achievements.length > 0) {
+      showToast(`${data.achievements.length} neues Abzeichen freigeschaltet!`, 5000);
+    }
+  } catch (error) {
+    gameState.resultSubmitted = false;
+    showToast('Ergebnis konnte nicht gespeichert werden.', 5000);
+  }
 }
 
 function endGame(result, title, message) {
@@ -633,7 +655,7 @@ function showToast(message, duration = 3000) {
   }, duration);
 }
 
-// Open index.html directly in the browser; no server is required.
+// The homepage links directly to this separate game page.
 startGame();
 
 function togglePause() {
