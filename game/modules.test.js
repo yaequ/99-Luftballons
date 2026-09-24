@@ -7,7 +7,13 @@ const { createInitialState, createSide } = await import('./modules/state.js');
 const { canBuildAt, mapPathPoint, buildZonesForMap } = await import('./modules/building.js');
 const { desiredAIFieldCount, getAIBuildFields, buyAITower } = await import('./modules/ai.js');
 
-const map = { logicalCrop: 12, hudCrop: 40, image: { naturalWidth: 960, naturalHeight: 760 } };
+const map = {
+  logicalCrop: 12, hudCrop: 40, image: { naturalWidth: 960, naturalHeight: 760 },
+  // Explicit source-image build zones, as required by the current map format.
+  buildZones: Array.from({ length: 8 }, (_, index) => ({
+    x: 240 + (index % 2) * 360, y: 100 + Math.floor(index / 2) * 150, w: 192, h: 96
+  }))
+};
 
 test('new matches and sides do not share mutable state', () => {
   const first = createInitialState();

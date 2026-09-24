@@ -13,6 +13,7 @@ const CONFIG = {
   BOSS_SPAWN_INTERVAL: 1.2,
   INTERMISSION_SECONDS: 5,
   CHARACTER_RENDER: { MAX_WIDTH: 25, HEIGHT: 29 },
+  TOWER_LEVEL_MULTIPLIERS: [1, 1.5, 2.5],
   TOWERS: {
     cactus: { name: 'Kaktus', cost: 25, range: 45, damage: 0.3, fireRate: 0.58, color: '#43d17d', directionFrames: [5, 6, 2, 1, 0, 8, 9, 3] },
     fan: { name: 'Gebläse', cost: 45, range: 55, damage: 1, fireRate: 0.34, color: '#70a1ff', directionFrames: [4, 3, 2, 1, 0, 8, 7, 6] },

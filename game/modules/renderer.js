@@ -1,7 +1,8 @@
 import { CONFIG } from './config.js';
 import { ASSETS } from './assets.js';
-import { buildZonesForMap, canBuildAt } from './building.js';
-function createRenderer(getState, mousePos) {
+import { buildZonesForMap } from './building.js';
+import { canMergeTowers } from './towers.js';
+function createRenderer(getState, mousePos, getTowerInteraction = () => ({})) {
   function prepareContext(ctx) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -29,7 +30,9 @@ function createRenderer(getState, mousePos) {
       ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
     }
 
-    if (isPlayerSide && getState().selectedTowerType) {
+    const interaction = isPlayerSide ? getTowerInteraction() : {};
+    const drag = interaction.drag?.active ? interaction.drag : null;
+    if (isPlayerSide && (getState().selectedTowerType || drag)) {
       ctx.save();
       ctx.strokeStyle = 'rgba(143, 242, 194, 0.75)';
       ctx.lineWidth = 1;
@@ -38,7 +41,10 @@ function createRenderer(getState, mousePos) {
       ctx.restore();
     }
 
-    side.towers.forEach((tower) => drawTower(ctx, tower));
+    side.towers.forEach((tower) => {
+      drawTower(ctx, tower, drag?.source === tower ? 0.3 : 1);
+      if (isPlayerSide) drawLevel(ctx, tower);
+    });
 
     side.projectiles.forEach((projectile) => {
       ctx.strokeStyle = projectile.color;
@@ -61,10 +67,51 @@ function createRenderer(getState, mousePos) {
       drawBalloonSprite(ctx, pop.type, frame, pop.x, pop.y, pop.size);
     });
 
-    if (isPlayerSide && getState().selectedTowerType && mousePos.onCanvas) {
-      renderBuildPreview(ctx);
+    if (isPlayerSide && interaction.placement) renderPlacementPreview(ctx, interaction.placement);
+    if (isPlayerSide) renderTowerInteraction(ctx, side, interaction, drag);
+  }
+
+  function drawLevel(ctx, tower) {
+    ctx.save();
+    ctx.fillStyle = '#183136';
+    ctx.fillRect(tower.x + 3, tower.y + 3, 10, 10);
+    ctx.fillStyle = '#fff8dc';
+    ctx.font = 'bold 8px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(tower.level), tower.x + 8, tower.y + 8);
+    ctx.restore();
+  }
+
+  function renderTowerInteraction(ctx, side, interaction, drag) {
+    ctx.save();
+    ctx.lineWidth = 1;
+    for (const tower of side.towers) {
+      const compatible = drag && canMergeTowers(drag.source, tower);
+      if (!compatible && tower !== interaction.selected && tower !== interaction.hovered && tower !== drag?.target) continue;
+      ctx.strokeStyle = tower === drag?.target && !compatible ? '#f25656' : compatible ? '#8ff2c2'
+        : tower === interaction.hovered ? '#7edcff' : '#ffe7a3';
+      ctx.lineWidth = tower === drag?.target ? 2 : 1;
+      ctx.strokeRect(tower.x - 13, tower.y - 20, 26, 34);
+      if (compatible) {
+        ctx.fillStyle = '#183136';
+        ctx.fillRect(tower.x - 12, tower.y - 20, 9, 9);
+        ctx.fillStyle = '#8ff2c2';
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText('+', tower.x - 10, tower.y - 12);
+      }
     }
-    if (isPlayerSide && getState().selectedTowerType && getState().buildCursor.active) renderKeyboardBuildCursor(ctx);
+    if (drag) {
+      const allowed = drag.result === 'move' || drag.result === 'merge';
+      ctx.strokeStyle = allowed ? '#8ff2c2' : '#f25656';
+      const x = drag.result === 'merge' ? drag.target.x : drag.x;
+      const y = drag.result === 'merge' ? drag.target.y : drag.y;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - 7, y - 7, 14, 14);
+      drawTower(ctx, { ...drag.source, x, y }, 0.65);
+      drawLevel(ctx, { ...drag.source, x, y, level: drag.result === 'merge' ? drag.source.level + 1 : drag.source.level });
+    }
+    ctx.restore();
   }
 
   function drawBossSprite(ctx, x, y, size) {
@@ -109,28 +156,38 @@ function createRenderer(getState, mousePos) {
     ctx.restore();
   }
 
-  function renderBuildPreview(ctx) {
-    const type = getState().selectedTowerType;
-    const towerData = CONFIG.TOWERS[type];
-    const allowed = canBuildAt(getState().player, type, mousePos.x, mousePos.y) === true;
-    ctx.strokeStyle = allowed ? 'rgba(143, 242, 194, 0.95)' : 'rgba(239, 102, 107, 0.95)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(mousePos.x, mousePos.y, towerData.range, 0, Math.PI * 2);
-    ctx.stroke();
-    drawTower(ctx, { type, frameIndex: 0, x: mousePos.x, y: mousePos.y }, 0.58);
-  }
-
-  function renderKeyboardBuildCursor(ctx) {
-    const { x, y } = getState().buildCursor;
-    const type = getState().selectedTowerType;
-    const allowed = canBuildAt(getState().player, type, x, y) === true;
+  function renderPlacementPreview(ctx, placement) {
+    const { type, target, result } = placement;
+    const merging = result === 'merge';
+    const allowed = merging || result === 'build';
+    const x = target ? target.x : placement.x;
+    const y = target ? target.y : placement.y;
     ctx.save();
     ctx.strokeStyle = allowed ? '#8ff2c2' : '#ef666b';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x, y, CONFIG.TOWERS[type].range, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.lineWidth = 2;
-    ctx.strokeRect(x - 6, y - 6, 12, 12);
+    if (target) ctx.strokeRect(x - 13, y - 20, 26, 34);
+    else ctx.strokeRect(x - 6, y - 6, 12, 12);
+    const ghost = { type, frameIndex: target?.frameIndex || 0, x, y, level: merging ? target.level + 1 : 1 };
+    drawTower(ctx, ghost, 0.65);
+    drawLevel(ctx, ghost);
+    if (merging) {
+      const text = `Zu Stufe ${target.level + 1} verschmelzen`;
+      ctx.font = 'bold 8px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      const width = ctx.measureText(text).width + 8;
+      const left = Math.max(1, Math.min(CONFIG.CANVAS_WIDTH - width - 1, x - width / 2));
+      const top = Math.max(1, y - 34);
+      ctx.fillStyle = '#183136';
+      ctx.fillRect(left, top, width, 12);
+      ctx.fillStyle = '#8ff2c2';
+      ctx.fillText(text, left + 4, top + 2);
+    }
     ctx.restore();
-    drawTower(ctx, { type, frameIndex: 0, x, y }, 0.7);
   }
 
   function renderTowerPortraits() {

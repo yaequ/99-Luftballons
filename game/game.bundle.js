@@ -18,6 +18,7 @@ const CONFIG = {
   BOSS_SPAWN_INTERVAL: 1.2,
   INTERMISSION_SECONDS: 5,
   CHARACTER_RENDER: { MAX_WIDTH: 25, HEIGHT: 29 },
+  TOWER_LEVEL_MULTIPLIERS: [1, 1.5, 2.5],
   TOWERS: {
     cactus: { name: 'Kaktus', cost: 25, range: 45, damage: 0.3, fireRate: 0.58, color: '#43d17d', directionFrames: [5, 6, 2, 1, 0, 8, 9, 3] },
     fan: { name: 'Gebläse', cost: 45, range: 55, damage: 1, fireRate: 0.34, color: '#70a1ff', directionFrames: [4, 3, 2, 1, 0, 8, 7, 6] },
@@ -279,11 +280,11 @@ function pointInBuildZone(map, x, y) {
   return buildZonesForMap(map).some((zone) => x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h);
 }
 
-function canBuildAt(side, type, x, y, isFree = false) {
+function canBuildAt(side, type, x, y, isFree = false, ignoredTower = null) {
   const towerData = CONFIG.TOWERS[type];
   if (!isFree && side.gold < towerData.cost) return 'gold';
   if (!pointInBuildZone(side.map, x, y)) return 'zone';
-  if (side.towers.some((tower) => Math.hypot(tower.x - x, tower.y - y) < CONFIG.GRID_SIZE * 1.5)) return 'occupied';
+  if (side.towers.some((tower) => tower !== ignoredTower && Math.hypot(tower.x - x, tower.y - y) < CONFIG.GRID_SIZE * 1.5)) return 'occupied';
   return true;
 }
 return { mapPathPoint, buildZonesForMap, canBuildAt };
@@ -335,11 +336,131 @@ function buyAITower(gameState, tryBuildTower) {
 return { buyAITower, desiredAIFieldCount, getAIBuildFields };
 })();
 
+modules["modules/towers.js"] = (() => {
+const { CONFIG } = modules["modules/config.js"];
+const { canBuildAt } = modules["modules/building.js"];
+
+function towerDamage(type, level) {
+  return CONFIG.TOWERS[type].damage * CONFIG.TOWER_LEVEL_MULTIPLIERS[level - 1];
+}
+
+function createTower(type, x, y) {
+  const data = CONFIG.TOWERS[type];
+  return {
+    x, y, type, level: 1,
+    range: data.range, damage: towerDamage(type, 1), fireRate: data.fireRate,
+    cooldown: 0, color: data.color, frameIndex: 0
+  };
+}
+
+function canMergeTowers(source, target) {
+  return Boolean(source && target && source !== target && source.type === target.type
+    && source.level === target.level && source.level >= 1
+    && source.level < CONFIG.TOWER_LEVEL_MULTIPLIERS.length);
+}
+
+// Include both the sprite and its visible level badge.
+// Prefer the nearest anchor in crowded fields.
+function towerAtPoint(side, x, y, ignoredTower = null) {
+  let nearest = null;
+  let distance = Infinity;
+  for (const tower of side.towers) {
+    if (tower === ignoredTower) continue;
+    const onSprite = Math.abs(x - tower.x) <= CONFIG.CHARACTER_RENDER.MAX_WIDTH / 2
+      && Math.abs(y - (tower.y - 4)) <= CONFIG.CHARACTER_RENDER.HEIGHT / 2;
+    const onBadge = x >= tower.x + 3 && x <= tower.x + 13
+      && y >= tower.y + 3 && y <= tower.y + 13;
+    if (!onSprite && !onBadge) continue;
+    const candidateDistance = Math.hypot(x - tower.x, y - tower.y);
+    if (candidateDistance < distance) {
+      nearest = tower;
+      distance = candidateDistance;
+    }
+  }
+  return nearest;
+}
+
+function towerDropResult(side, source, x, y, target = null) {
+  if (!side.towers.includes(source)) return 'missing';
+  if (target) return side.towers.includes(target) && canMergeTowers(source, target) ? 'merge' : 'incompatible';
+  const result = canBuildAt(side, source.type, x, y, true, source);
+  return result === true ? 'move' : result;
+}
+
+// One transaction for both a purchased level-1 tower and an existing dragged tower.
+// Revalidate here before mutating the array or charging any gold.
+function mergeTowers(side, source, target, purchased = false) {
+  if (!side.towers.includes(target) || (!purchased && !side.towers.includes(source))) return { result: 'missing' };
+  if (!canMergeTowers(source, target) || (purchased && (source.level !== 1 || side.towers.includes(source)))) return { result: 'incompatible' };
+  const cost = purchased ? CONFIG.TOWERS[source.type].cost : 0;
+  if (side.gold < cost) return { result: 'gold' };
+  const level = target.level + 1;
+  const merged = { ...target, level, damage: towerDamage(target.type, level),
+    cooldown: Math.max(source.cooldown, target.cooldown) };
+  side.towers.splice(side.towers.indexOf(target), 1, merged);
+  if (!purchased) side.towers.splice(side.towers.indexOf(source), 1);
+  side.gold -= cost;
+  return { result: 'merge', tower: merged };
+}
+
+// Shared by the preview, pointer/keyboard activation and the final purchase.
+// hitX/hitY are unrounded canvas coordinates; x/y are the grid-aligned build spot.
+function towerPlacementResult(side, type, x, y, hitX = x, hitY = y) {
+  const intent = { type, x, y, target: null, result: 'zone' };
+  if (!CONFIG.TOWERS[type] || ![x, y, hitX, hitY].every(Number.isFinite)
+    || hitX < 0 || hitY < 0 || hitX >= CONFIG.CANVAS_WIDTH || hitY >= CONFIG.CANVAS_HEIGHT) return intent;
+  intent.target = towerAtPoint(side, hitX, hitY) || towerAtPoint(side, x, y);
+  if (intent.target) {
+    if (!canMergeTowers({ type, level: 1 }, intent.target)) intent.result = 'incompatible';
+    else if (side.gold < CONFIG.TOWERS[type].cost) intent.result = 'gold';
+    else intent.result = 'merge';
+  } else {
+    const result = canBuildAt(side, type, x, y);
+    intent.result = result === true ? 'build' : result;
+  }
+  return intent;
+}
+
+function purchaseTower(side, type, x, y, hitX = x, hitY = y) {
+  const intent = towerPlacementResult(side, type, x, y, hitX, hitY);
+  if (intent.result !== 'build' && intent.result !== 'merge') return { result: intent.result };
+  const tower = createTower(type, x, y);
+  if (intent.result === 'merge') return mergeTowers(side, tower, intent.target, true);
+  side.gold -= CONFIG.TOWERS[type].cost;
+  side.towers.push(tower);
+  return { result: 'build', tower };
+}
+
+function dropTower(side, source, x, y, target = null) {
+  const result = towerDropResult(side, source, x, y, target);
+  if (result === 'move') {
+    // Preserve identity and every live state value, including remaining cooldown.
+    source.x = x;
+    source.y = y;
+    return { result, tower: source };
+  }
+  if (result === 'merge') {
+    return mergeTowers(side, source, target);
+  }
+  return { result, tower: source };
+}
+
+function removeTower(side, tower) {
+  const index = side.towers.indexOf(tower);
+  if (index === -1) return false;
+  side.towers.splice(index, 1);
+  // Already fired projectiles finish normally; attacks only iterate side.towers.
+  return true;
+}
+return { towerDamage, createTower, canMergeTowers, towerAtPoint, towerDropResult, mergeTowers, towerPlacementResult, purchaseTower, dropTower, removeTower };
+})();
+
 modules["modules/renderer.js"] = (() => {
 const { CONFIG } = modules["modules/config.js"];
 const { ASSETS } = modules["modules/assets.js"];
-const { buildZonesForMap, canBuildAt } = modules["modules/building.js"];
-function createRenderer(getState, mousePos) {
+const { buildZonesForMap } = modules["modules/building.js"];
+const { canMergeTowers } = modules["modules/towers.js"];
+function createRenderer(getState, mousePos, getTowerInteraction = () => ({})) {
   function prepareContext(ctx) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -367,7 +488,9 @@ function createRenderer(getState, mousePos) {
       ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
     }
 
-    if (isPlayerSide && getState().selectedTowerType) {
+    const interaction = isPlayerSide ? getTowerInteraction() : {};
+    const drag = interaction.drag?.active ? interaction.drag : null;
+    if (isPlayerSide && (getState().selectedTowerType || drag)) {
       ctx.save();
       ctx.strokeStyle = 'rgba(143, 242, 194, 0.75)';
       ctx.lineWidth = 1;
@@ -376,7 +499,10 @@ function createRenderer(getState, mousePos) {
       ctx.restore();
     }
 
-    side.towers.forEach((tower) => drawTower(ctx, tower));
+    side.towers.forEach((tower) => {
+      drawTower(ctx, tower, drag?.source === tower ? 0.3 : 1);
+      if (isPlayerSide) drawLevel(ctx, tower);
+    });
 
     side.projectiles.forEach((projectile) => {
       ctx.strokeStyle = projectile.color;
@@ -399,10 +525,51 @@ function createRenderer(getState, mousePos) {
       drawBalloonSprite(ctx, pop.type, frame, pop.x, pop.y, pop.size);
     });
 
-    if (isPlayerSide && getState().selectedTowerType && mousePos.onCanvas) {
-      renderBuildPreview(ctx);
+    if (isPlayerSide && interaction.placement) renderPlacementPreview(ctx, interaction.placement);
+    if (isPlayerSide) renderTowerInteraction(ctx, side, interaction, drag);
+  }
+
+  function drawLevel(ctx, tower) {
+    ctx.save();
+    ctx.fillStyle = '#183136';
+    ctx.fillRect(tower.x + 3, tower.y + 3, 10, 10);
+    ctx.fillStyle = '#fff8dc';
+    ctx.font = 'bold 8px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(tower.level), tower.x + 8, tower.y + 8);
+    ctx.restore();
+  }
+
+  function renderTowerInteraction(ctx, side, interaction, drag) {
+    ctx.save();
+    ctx.lineWidth = 1;
+    for (const tower of side.towers) {
+      const compatible = drag && canMergeTowers(drag.source, tower);
+      if (!compatible && tower !== interaction.selected && tower !== interaction.hovered && tower !== drag?.target) continue;
+      ctx.strokeStyle = tower === drag?.target && !compatible ? '#f25656' : compatible ? '#8ff2c2'
+        : tower === interaction.hovered ? '#7edcff' : '#ffe7a3';
+      ctx.lineWidth = tower === drag?.target ? 2 : 1;
+      ctx.strokeRect(tower.x - 13, tower.y - 20, 26, 34);
+      if (compatible) {
+        ctx.fillStyle = '#183136';
+        ctx.fillRect(tower.x - 12, tower.y - 20, 9, 9);
+        ctx.fillStyle = '#8ff2c2';
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText('+', tower.x - 10, tower.y - 12);
+      }
     }
-    if (isPlayerSide && getState().selectedTowerType && getState().buildCursor.active) renderKeyboardBuildCursor(ctx);
+    if (drag) {
+      const allowed = drag.result === 'move' || drag.result === 'merge';
+      ctx.strokeStyle = allowed ? '#8ff2c2' : '#f25656';
+      const x = drag.result === 'merge' ? drag.target.x : drag.x;
+      const y = drag.result === 'merge' ? drag.target.y : drag.y;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - 7, y - 7, 14, 14);
+      drawTower(ctx, { ...drag.source, x, y }, 0.65);
+      drawLevel(ctx, { ...drag.source, x, y, level: drag.result === 'merge' ? drag.source.level + 1 : drag.source.level });
+    }
+    ctx.restore();
   }
 
   function drawBossSprite(ctx, x, y, size) {
@@ -447,28 +614,38 @@ function createRenderer(getState, mousePos) {
     ctx.restore();
   }
 
-  function renderBuildPreview(ctx) {
-    const type = getState().selectedTowerType;
-    const towerData = CONFIG.TOWERS[type];
-    const allowed = canBuildAt(getState().player, type, mousePos.x, mousePos.y) === true;
-    ctx.strokeStyle = allowed ? 'rgba(143, 242, 194, 0.95)' : 'rgba(239, 102, 107, 0.95)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(mousePos.x, mousePos.y, towerData.range, 0, Math.PI * 2);
-    ctx.stroke();
-    drawTower(ctx, { type, frameIndex: 0, x: mousePos.x, y: mousePos.y }, 0.58);
-  }
-
-  function renderKeyboardBuildCursor(ctx) {
-    const { x, y } = getState().buildCursor;
-    const type = getState().selectedTowerType;
-    const allowed = canBuildAt(getState().player, type, x, y) === true;
+  function renderPlacementPreview(ctx, placement) {
+    const { type, target, result } = placement;
+    const merging = result === 'merge';
+    const allowed = merging || result === 'build';
+    const x = target ? target.x : placement.x;
+    const y = target ? target.y : placement.y;
     ctx.save();
     ctx.strokeStyle = allowed ? '#8ff2c2' : '#ef666b';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x, y, CONFIG.TOWERS[type].range, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.lineWidth = 2;
-    ctx.strokeRect(x - 6, y - 6, 12, 12);
+    if (target) ctx.strokeRect(x - 13, y - 20, 26, 34);
+    else ctx.strokeRect(x - 6, y - 6, 12, 12);
+    const ghost = { type, frameIndex: target?.frameIndex || 0, x, y, level: merging ? target.level + 1 : 1 };
+    drawTower(ctx, ghost, 0.65);
+    drawLevel(ctx, ghost);
+    if (merging) {
+      const text = `Zu Stufe ${target.level + 1} verschmelzen`;
+      ctx.font = 'bold 8px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      const width = ctx.measureText(text).width + 8;
+      const left = Math.max(1, Math.min(CONFIG.CANVAS_WIDTH - width - 1, x - width / 2));
+      const top = Math.max(1, y - 34);
+      ctx.fillStyle = '#183136';
+      ctx.fillRect(left, top, width, 12);
+      ctx.fillStyle = '#8ff2c2';
+      ctx.fillText(text, left + 4, top + 2);
+    }
     ctx.restore();
-    drawTower(ctx, { type, frameIndex: 0, x, y }, 0.7);
   }
 
   function renderTowerPortraits() {
@@ -509,6 +686,251 @@ function createRenderer(getState, mousePos) {
   return { renderSide, renderTowerPortraits, renderBalloonPortraits };
 }
 return { createRenderer };
+})();
+
+modules["modules/tower-controls.js"] = (() => {
+const { CONFIG } = modules["modules/config.js"];
+const { towerAtPoint, towerDropResult, towerPlacementResult, dropTower, removeTower } = modules["modules/towers.js"];
+
+const DRAG_THRESHOLD = 6; // CSS pixels, independent of canvas resolution.
+
+function createTowerControls({ canvas, panel, label, feedback, removeButton, dialog, cancelButton,
+  confirmButton, getState, clearBuildSelection, placeTower, onChange, onMessage }) {
+  const view = { selected: null, hovered: null, drag: null, buildPoint: null, placement: null };
+  let pendingRemoval = null;
+  const editable = () => getState().active && !getState().paused && !dialog.open;
+  const snap = (value) => Math.floor(value / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE + CONFIG.GRID_SIZE / 2;
+
+  function point(event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (event.clientX - rect.left) * CONFIG.CANVAS_WIDTH / rect.width,
+      y: (event.clientY - rect.top) * CONFIG.CANVAS_HEIGHT / rect.height,
+      inside: event.clientX >= rect.left && event.clientX < rect.right
+        && event.clientY >= rect.top && event.clientY < rect.bottom
+    };
+  }
+
+  function refresh() {
+    if (!getState().player.towers.includes(view.selected)) view.selected = null;
+    if (!getState().player.towers.includes(view.hovered)) view.hovered = null;
+    panel.hidden = !view.selected;
+    if (view.selected) label.textContent = `${CONFIG.TOWERS[view.selected.type].name} · Stufe ${view.selected.level}`;
+    canvas.classList.toggle('is-dragging-tower', Boolean(view.drag?.active));
+    canvas.classList.toggle('has-hovered-tower', Boolean(view.hovered && editable() && !getState().selectedTowerType));
+    updateFeedback();
+    onChange();
+  }
+
+  function updateFeedback() {
+    const drag = view.drag?.active ? view.drag : null;
+    const tower = view.hovered || view.selected;
+    const type = getState().selectedTowerType;
+    view.placement = type && view.buildPoint && editable()
+      ? towerPlacementResult(getState().player, type, view.buildPoint.x, view.buildPoint.y, view.buildPoint.hitX, view.buildPoint.hitY) : null;
+    let text = 'Spiel starten. Danach Türme bauen oder einen neuen Turm auf einen passenden Turm setzen.';
+    let state = 'idle';
+    if (getState().paused) {
+      text = 'Spiel pausiert. Zum Verschieben und Verschmelzen bitte fortsetzen.';
+    } else if (view.placement) {
+      const placement = view.placement;
+      if (placement.result === 'merge') {
+        text = `Zu Stufe ${placement.target.level + 1} verschmelzen · ${CONFIG.TOWERS[type].name} · ${CONFIG.TOWERS[type].cost} Gold. Zum Bestätigen klicken.`;
+        state = 'merge';
+      } else if (placement.result === 'build') {
+        text = `${CONFIG.TOWERS[type].name} · Stufe 1 für ${CONFIG.TOWERS[type].cost} Gold hier bauen. Zum Bestätigen klicken.`;
+        state = 'build';
+      } else {
+        text = placement.result === 'gold' ? `Nicht genug Gold. Benötigt: ${CONFIG.TOWERS[type].cost} Gold.`
+          : placement.result === 'incompatible' ? 'Kein Verschmelzen: gleicher Turmtyp und gleiche Stufe nötig. Neue Türme sind Stufe 1.'
+          : 'Hier kann kein Turm gebaut werden. Eine freie Baufläche wählen.';
+        state = 'invalid';
+      }
+    } else if (drag) {
+      if (drag.result === 'merge') {
+        text = `Loslassen zum Verschmelzen: ${CONFIG.TOWERS[drag.source.type].name} · Stufe ${drag.source.level} + ${drag.target.level} → Stufe ${drag.source.level + 1}.`;
+        state = 'merge';
+      } else if (drag.result === 'move') {
+        text = 'Loslassen zum Verschieben. Stufe und Abklingzeit bleiben erhalten.';
+        state = 'move';
+      } else {
+        text = drag.result === 'incompatible'
+          ? 'Kein Verschmelzen: gleicher Turmtyp und gleiche Stufe nötig. Stufe 3 ist maximal.'
+          : 'Ungültiger Platz. Beim Loslassen bleibt der Turm an seiner bisherigen Position.';
+        state = 'invalid';
+      }
+    } else if (tower && getState().active) {
+      text = `${CONFIG.TOWERS[tower.type].name} · Stufe ${tower.level} · Schaden ${tower.damage.toLocaleString('de-DE', { maximumFractionDigits: 3 })}. Gedrückt halten und ziehen.`;
+      state = 'hover';
+    } else if (getState().active) {
+      text = 'Turm mit gedrückter Maustaste auf einen gleichen Turm derselben Stufe ziehen. Dann loslassen.';
+    }
+    if (feedback.textContent !== text) feedback.textContent = text;
+    feedback.dataset.state = state;
+  }
+
+  function cancelDrag() {
+    const drag = view.drag;
+    view.drag = null;
+    view.hovered = null;
+    if (drag && canvas.hasPointerCapture(drag.pointerId)) canvas.releasePointerCapture(drag.pointerId);
+    refresh();
+  }
+
+  function clear() {
+    pendingRemoval = null;
+    if (dialog.open) dialog.close();
+    view.selected = null;
+    view.buildPoint = null;
+    view.placement = null;
+    cancelDrag();
+  }
+
+  function previewPlacement(x, y, hitX = x, hitY = y) {
+    view.buildPoint = { x, y, hitX, hitY };
+    view.hovered = null;
+    refresh();
+  }
+
+  function finishPlacement(tower = null) {
+    view.selected = tower;
+    view.hovered = null;
+    view.buildPoint = null;
+    refresh();
+  }
+
+  function updateDrag(event) {
+    const drag = view.drag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    drag.active ||= Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >= DRAG_THRESHOLD;
+    if (!drag.active) return;
+    const pos = point(event);
+    drag.x = snap(pos.x - drag.offsetX);
+    drag.y = snap(pos.y - drag.offsetY);
+    // The grab offset and grid snapping can leave the pointer just outside a
+    // sprite even though the dragged tower is on top of it.
+    drag.target = pos.inside ? (towerAtPoint(getState().player, pos.x, pos.y, drag.source)
+      || towerAtPoint(getState().player, drag.x, drag.y, drag.source)) : null;
+    drag.result = pos.inside
+      ? towerDropResult(getState().player, drag.source, drag.x, drag.y, drag.target) : 'outside';
+    refresh();
+  }
+
+  canvas.addEventListener('pointerdown', (event) => {
+    if (!editable() || view.drag || event.button !== 0 || event.isPrimary === false) return;
+    event.preventDefault();
+    canvas.focus({ preventScroll: true });
+    const pos = point(event);
+    // A build selection takes precedence over selecting/dragging an existing tower.
+    // Pass the actual click coordinates, never a cached hover target.
+    if (getState().selectedTowerType) {
+      view.selected = null;
+      view.buildPoint = { x: snap(pos.x), y: snap(pos.y), hitX: pos.x, hitY: pos.y };
+      placeTower(snap(pos.x), snap(pos.y), pos.x, pos.y);
+      refresh();
+      return;
+    }
+    const tower = towerAtPoint(getState().player, pos.x, pos.y);
+    if (!tower) {
+      view.selected = null;
+      placeTower(snap(pos.x), snap(pos.y));
+      refresh();
+      return;
+    }
+    clearBuildSelection();
+    view.hovered = null;
+    view.selected = tower;
+    view.drag = {
+      source: tower, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY,
+      offsetX: pos.x - tower.x, offsetY: pos.y - tower.y,
+      x: tower.x, y: tower.y, target: null, active: false, result: 'move'
+    };
+    canvas.setPointerCapture(event.pointerId);
+    refresh();
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (view.drag) {
+      updateDrag(event);
+      return;
+    }
+    const pos = point(event);
+    if (getState().selectedTowerType) {
+      getState().buildCursor.active = false;
+      previewPlacement(snap(pos.x), snap(pos.y), pos.x, pos.y);
+      return;
+    }
+    const hovered = editable() && pos.inside ? towerAtPoint(getState().player, pos.x, pos.y) : null;
+    if (hovered !== view.hovered) {
+      view.hovered = hovered;
+      refresh();
+    }
+  });
+  canvas.addEventListener('pointerleave', () => {
+    view.hovered = null;
+    view.buildPoint = null;
+    refresh();
+  });
+  canvas.addEventListener('pointerup', (event) => {
+    if (!view.drag || view.drag.pointerId !== event.pointerId) return;
+    updateDrag(event);
+    const drag = view.drag;
+    if (drag.active && editable()) {
+      if (drag.result === 'move' || drag.result === 'merge') {
+        const dropped = dropTower(getState().player, drag.source, drag.x, drag.y, drag.target);
+        view.selected = dropped.tower;
+        if (dropped.result === 'merge') onMessage(`Verschmolzen: ${CONFIG.TOWERS[dropped.tower.type].name}, Stufe ${dropped.tower.level}.`);
+      } else {
+        onMessage(drag.result === 'incompatible'
+          ? 'Nur gleiche Türme derselben Stufe lassen sich bis Stufe 3 verschmelzen.'
+          : 'Ungültiger Platz. Der Turm bleibt an seiner bisherigen Position.');
+      }
+    }
+    cancelDrag();
+  });
+  for (const name of ['pointercancel', 'lostpointercapture']) {
+    canvas.addEventListener(name, (event) => {
+      if (view.drag?.pointerId === event.pointerId) cancelDrag();
+    });
+  }
+  window.addEventListener('blur', cancelDrag);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) cancelDrag();
+  });
+  canvas.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && (view.drag || view.selected)) {
+      event.preventDefault();
+      clear();
+    }
+  });
+
+  removeButton.addEventListener('click', () => {
+    if (!editable() || !getState().player.towers.includes(view.selected)) return;
+    cancelDrag();
+    pendingRemoval = view.selected;
+    dialog.showModal();
+    cancelButton.focus();
+  });
+  cancelButton.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('cancel', () => { pendingRemoval = null; });
+  dialog.addEventListener('close', () => {
+    pendingRemoval = null;
+    if (getState().active && view.selected) removeButton.focus({ preventScroll: true });
+  });
+  confirmButton.addEventListener('click', () => {
+    if (dialog.open && getState().active && !getState().paused && pendingRemoval) {
+      removeTower(getState().player, pendingRemoval);
+      view.selected = null;
+    }
+    pendingRemoval = null;
+    dialog.close();
+    refresh();
+    canvas.focus({ preventScroll: true });
+  });
+
+  return { view, clear, cancelDrag, updateFeedback, previewPlacement, finishPlacement };
+}
+return { createTowerControls };
 })();
 
 modules["rounds.js"] = (() => {
@@ -585,6 +1007,8 @@ const { createInitialState } = modules["modules/state.js"];
 const { mapPathPoint, canBuildAt } = modules["modules/building.js"];
 const { buyAITower } = modules["modules/ai.js"];
 const { createRenderer } = modules["modules/renderer.js"];
+const { createTower, towerPlacementResult, purchaseTower } = modules["modules/towers.js"];
+const { createTowerControls } = modules["modules/tower-controls.js"];
 const RoundConfig = modules["rounds.js"];
 
 /* 99 LUFTBALLONS – Vanilla HTML5 Canvas Tower Defense */
@@ -602,6 +1026,11 @@ const ui = {
   p1Income: document.getElementById('p1-income'),
   p2Hp: document.getElementById('p2-hp'),
   p2Gold: document.getElementById('p2-gold'),
+  p2Income: document.getElementById('p2-income'),
+  p1HealthMeter: document.getElementById('p1-health-meter'),
+  p1HealthFill: document.getElementById('p1-health-fill'),
+  p2HealthMeter: document.getElementById('p2-health-meter'),
+  p2HealthFill: document.getElementById('p2-health-fill'),
   timer: document.getElementById('match-timer'),
   lobbyStatus: document.getElementById('lobby-status'),
   mapTip: document.getElementById('map-tip'),
@@ -619,7 +1048,8 @@ const ui = {
   roundCountdown: document.getElementById('round-countdown'),
   roundState: document.getElementById('round-state'),
   playerMapTitle: document.getElementById('player-map-title'),
-  enemyMapTitle: document.getElementById('enemy-map-title')
+  enemyMapTitle: document.getElementById('enemy-map-title'),
+  gameMenu: document.getElementById('game-menu')
 };
 
 const gameFrame = document.querySelector('.game-frame');
@@ -636,7 +1066,22 @@ let toastTimer = 0;
 let startPending = false;
 
 let gameState = createInitialState();
-const { renderSide, renderTowerPortraits, renderBalloonPortraits } = createRenderer(() => gameState, mousePos);
+const { renderSide, renderTowerPortraits, renderBalloonPortraits } = createRenderer(() => gameState, mousePos, () => towerControls.view);
+const towerControls = createTowerControls({
+  canvas: canvasPlayer,
+  panel: document.getElementById('tower-actions'),
+  label: document.getElementById('selected-tower-label'),
+  feedback: document.getElementById('tower-feedback'),
+  removeButton: document.getElementById('btn-remove-tower'),
+  dialog: document.getElementById('dialog-remove-tower'),
+  cancelButton: document.getElementById('btn-cancel-remove-tower'),
+  confirmButton: document.getElementById('btn-confirm-remove-tower'),
+  getState: () => gameState,
+  clearBuildSelection: clearTowerSelection,
+  placeTower: placeSelectedTower,
+  onChange: () => renderSide(ctxPlayer, gameState.player, true),
+  onMessage: showToast
+});
 
 async function loadMatchAssets() {
   const requiredAssets = [
@@ -695,20 +1140,24 @@ canvasPlayer.addEventListener('pointerleave', () => {
   mousePos.onCanvas = false;
 });
 
-canvasPlayer.addEventListener('pointerdown', (event) => {
-  event.preventDefault();
-  updatePointerPosition(event);
-  placeSelectedTower();
-});
-
 document.addEventListener('visibilitychange', () => {
   lastFrameTime = performance.now();
   accumulator = 0;
 });
 
 document.addEventListener('keydown', (event) => {
+  if (document.getElementById('dialog-remove-tower').open) return;
+  if (event.key === 'Escape' && ui.gameMenu.open) {
+    ui.gameMenu.removeAttribute('open');
+    ui.gameMenu.querySelector('summary').focus();
+    return;
+  }
   if (event.key.toLowerCase() !== 'i' || event.target.matches('input, textarea')) return;
   setControlsExpanded(gameFrame.classList.contains('controls-collapsed'));
+});
+
+document.addEventListener('pointerdown', (event) => {
+  if (ui.gameMenu.open && !ui.gameMenu.contains(event.target)) ui.gameMenu.removeAttribute('open');
 });
 
 canvasPlayer.addEventListener('keydown', (event) => {
@@ -744,6 +1193,7 @@ function updatePointerPosition(event) {
 async function startGame(retry = false) {
   if (startPending || gameState.paused) return;
   startPending = true;
+  towerControls.clear();
   if (!retry) gameState = createInitialState();
   ui.loadErrorModal.classList.remove('active');
   try {
@@ -775,7 +1225,7 @@ async function startGame(retry = false) {
 function returnToHomepage() {
   gameState.active = false;
   cancelAnimationFrame(animationFrameId);
-  window.location.assign('../menu.php');
+  window.location.assign('index.html');
 }
 
 function setControlsExpanded(expanded) {
@@ -786,6 +1236,7 @@ function setControlsExpanded(expanded) {
 
 function selectTower(type) {
   if (!gameState.active || gameState.paused) return;
+  towerControls.clear();
   gameState.selectedTowerType = gameState.selectedTowerType === type ? null : type;
   gameState.buildCursor.active = Boolean(gameState.selectedTowerType);
 
@@ -814,20 +1265,30 @@ function clearTowerSelection() {
   });
   ui.mapTip.querySelector('.map-tip__step').textContent = '1';
   ui.mapTip.querySelector('span:last-child').textContent = 'Turm wählen und auf einer dunklen Baufläche platzieren.';
+  towerControls.updateFeedback();
 }
 
 function announceBuildCursor() {
   const { x, y } = gameState.buildCursor;
-  const result = canBuildAt(gameState.player, gameState.selectedTowerType, x, y);
-  const state = result === true ? 'gültiger Bauplatz' : result === 'occupied' ? 'belegt' : result === 'gold' ? 'nicht genug Gold' : 'keine Baufläche';
-  ui.mapTip.querySelector('span:last-child').textContent = `${CONFIG.TOWERS[gameState.selectedTowerType].name}: Position ${x}/${y}, ${state}. Enter platziert.`;
+  towerControls.previewPlacement(x, y);
+  const { result, target } = towerPlacementResult(gameState.player, gameState.selectedTowerType, x, y);
+  const state = result === 'merge' ? `Zu Stufe ${target.level + 1} verschmelzen`
+    : result === 'build' ? 'gültiger Bauplatz' : result === 'gold' ? 'nicht genug Gold' : 'ungültiges Ziel';
+  ui.mapTip.querySelector('span:last-child').textContent = `${CONFIG.TOWERS[gameState.selectedTowerType].name}: Position ${x}/${y}, ${state}. Enter bestätigt.`;
 }
 
-function placeSelectedTower(x = mousePos.x, y = mousePos.y) {
-  if (!gameState.selectedTowerType || gameState.paused) return;
-  const result = tryBuildTower(gameState.player, gameState.selectedTowerType, x, y);
-
-  if (result === true) clearTowerSelection();
+function placeSelectedTower(x = mousePos.x, y = mousePos.y, hitX = x, hitY = y) {
+  if (!gameState.active || !gameState.selectedTowerType || gameState.paused) return;
+  const outcome = purchaseTower(gameState.player, gameState.selectedTowerType, x, y, hitX, hitY);
+  if (outcome.result === 'build' || outcome.result === 'merge') {
+    clearTowerSelection();
+    towerControls.finishPlacement(outcome.result === 'merge' ? outcome.tower : null);
+    if (outcome.result === 'merge') showToast(`Verschmolzen: ${CONFIG.TOWERS[outcome.tower.type].name}, Stufe ${outcome.tower.level}.`);
+    updateUI();
+  } else if (outcome.result === 'gold') {
+    showToast('Nicht genug Gold.');
+  }
+  return outcome;
 }
 
 function tryBuildTower(side, type, x, y, isFree = false) {
@@ -837,15 +1298,7 @@ function tryBuildTower(side, type, x, y, isFree = false) {
   const towerData = CONFIG.TOWERS[type];
   if (!isFree) side.gold -= towerData.cost;
 
-  side.towers.push({
-    x, y, type,
-    range: towerData.range,
-    damage: towerData.damage,
-    fireRate: towerData.fireRate,
-    cooldown: 0,
-    color: towerData.color,
-    frameIndex: 0
-  });
+  side.towers.push(createTower(type, x, y));
   updateUI();
   return true;
 }
@@ -1082,35 +1535,14 @@ function checkGameOver() {
   else if (gameState.enemy.hp <= 0) endGame('win', 'Sieg', 'Der Gegner konnte deine Ballons nicht halten.');
 }
 
-async function saveMatchResult(result) {
-  if (gameState.resultSubmitted) return;
+function saveMatchResult() {
+  // Standalone file:// copy: no account, backend or online score submission.
   gameState.resultSubmitted = true;
-
-  try {
-    const response = await fetch('../save-match.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        result,
-        duration_seconds: Math.round(gameState.secondsElapsed),
-        round_reached: gameState.currentRound
-      }),
-      keepalive: true
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    if (!data.success) throw new Error('Match result was rejected');
-    if (Array.isArray(data.achievements) && data.achievements.length > 0) {
-      showToast(`${data.achievements.length} neues Abzeichen freigeschaltet!`, 5000);
-    }
-  } catch (error) {
-    gameState.resultSubmitted = false;
-    showToast('Ergebnis konnte nicht gespeichert werden.', 5000);
-  }
 }
 
 function endGame(result, title, message) {
   gameState.active = false;
+  towerControls.clear();
   cancelAnimationFrame(animationFrameId);
   saveMatchResult(result);
   ui.gameOverTitle.textContent = title;
@@ -1125,6 +1557,7 @@ function formatRound(definition) {
 }
 
 function updateUI() {
+  towerControls.updateFeedback();
   const pauseButton = document.getElementById('btn-pause');
   pauseButton.disabled = !gameState.active;
   pauseButton.textContent = gameState.paused ? 'Fortsetzen' : 'Pausieren';
@@ -1132,15 +1565,16 @@ function updateUI() {
   document.getElementById('pause-status').textContent = gameState.paused ? 'Spiel pausiert' : '';
   gameFrame.classList.toggle('is-paused', gameState.paused);
   ui.autoStart.disabled = gameState.paused;
-  ui.p1Hp.textContent = `${gameState.player.hp} HP`;
+  updateHealthDisplay(gameState.player.hp, ui.p1Hp, ui.p1HealthMeter, ui.p1HealthFill);
   ui.p1Gold.textContent = Math.floor(gameState.player.gold);
   ui.p1Income.textContent = `+${gameState.player.income}/s`;
-  ui.p2Hp.textContent = `${gameState.enemy.hp} HP`;
+  updateHealthDisplay(gameState.enemy.hp, ui.p2Hp, ui.p2HealthMeter, ui.p2HealthFill);
   ui.p2Gold.textContent = Math.floor(gameState.enemy.gold);
+  ui.p2Income.textContent = `+${gameState.enemy.income}/s`;
 
   ui.wave.textContent = `${gameState.currentRound}/${CONFIG.WAVES}`;
   ui.remainingEnemies.textContent = gameState.remainingEnemies;
-  const labels = { ready: 'Bereit', spawning: 'Angriff läuft', clearing: 'Restliche Gegner', intermission: 'Rundenpause', completed: 'Abgeschlossen' };
+  const labels = { ready: 'Bereit', spawning: 'Angriff läuft', clearing: '', intermission: 'Rundenpause', completed: 'Abgeschlossen' };
   ui.roundState.textContent = labels[gameState.roundStatus];
   const nextDefinition = RoundConfig.ROUND_DEFINITIONS[gameState.currentRound];
   ui.nextWavePreview.textContent = nextDefinition ? formatRound(nextDefinition) : 'Keine weitere Runde';
@@ -1172,8 +1606,20 @@ function updateUI() {
   document.querySelectorAll('.send-btn').forEach((button) => {
     const balloonData = CONFIG.BALLOONS[button.dataset.balloon];
     button.disabled = !gameState.active || gameState.paused || gameState.player.gold < balloonData.cost;
-    button.querySelector('small').textContent = `${CONFIG.SEND_BATCH_SIZE} Ballons · ${balloonData.cost} G · +${balloonData.income}/s`;
+    button.querySelector('.balloon-card__batch').textContent = `${CONFIG.SEND_BATCH_SIZE} Ballons`;
+    button.querySelector('.balloon-card__price').textContent = balloonData.cost;
+    button.querySelector('.balloon-card__income').textContent = `+${balloonData.income} Gold/s`;
   });
+}
+
+function updateHealthDisplay(value, label, meter, fill) {
+  const maximum = 99;
+  const health = Math.max(0, Math.min(maximum, Math.round(value)));
+  const percentage = health / maximum * 100;
+  label.textContent = `${health} / ${maximum}`;
+  meter.setAttribute('aria-valuenow', String(health));
+  meter.classList.toggle('is-critical', health > 0 && health <= 30);
+  fill.style.width = `${percentage}%`;
 }
 
 function showWaveCompleted() {
@@ -1190,11 +1636,12 @@ function showToast(message, duration = 3000) {
   }, duration);
 }
 
-// The homepage links directly to this separate game page.
+// Open index.html directly in the browser; no server is required.
 startGame();
 
 function togglePause() {
   if (!gameState.active) return;
+  towerControls.clear();
   gameState.paused = !gameState.paused;
   cancelAnimationFrame(animationFrameId);
   lastFrameTime = performance.now();

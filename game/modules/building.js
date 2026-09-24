@@ -19,11 +19,11 @@ function pointInBuildZone(map, x, y) {
   return buildZonesForMap(map).some((zone) => x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h);
 }
 
-function canBuildAt(side, type, x, y, isFree = false) {
+function canBuildAt(side, type, x, y, isFree = false, ignoredTower = null) {
   const towerData = CONFIG.TOWERS[type];
   if (!isFree && side.gold < towerData.cost) return 'gold';
   if (!pointInBuildZone(side.map, x, y)) return 'zone';
-  if (side.towers.some((tower) => Math.hypot(tower.x - x, tower.y - y) < CONFIG.GRID_SIZE * 1.5)) return 'occupied';
+  if (side.towers.some((tower) => tower !== ignoredTower && Math.hypot(tower.x - x, tower.y - y) < CONFIG.GRID_SIZE * 1.5)) return 'occupied';
   return true;
 }
 
