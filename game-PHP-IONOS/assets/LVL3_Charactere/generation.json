@@ -1,0 +1,167 @@
+{
+  "tool": "Built-in image_gen",
+  "purpose": "Level 3 upgrade designs matching existing level 2 poses",
+  "prompts": [
+    {
+      "kind": "Kaktus",
+      "frontPrompt": "Use case: precise-object-edit. Create the LEVEL 3 upgrade of the supplied LEVEL 2 pixel-art tower sprite. Keep the green cactus cowboy identity and brown cowboy hat. Upgrade to elite dark steel shoulder, forearm and boot armor with strong warm gold trim, burgundy red poncho with gold border, golden hatband with one small star badge, and a reinforced compact rotary cactus launcher with gold barrel collar. Keep cactus green and readable; do not add spikes extending the silhouette. Preserve EXACT pose, facing direction, canvas aspect ratio, body height and silhouette footprint of the reference. Full body, isolated single character, crisp pixel-art blocks at the SAME coarse pixel density, black outlines, game-ready readable at 22 pixels tall. Change equipment/color details to communicate upgrade, NOT scale. Actual transparent RGBA background, including gaps around weapon and limbs; no black/white background, checkerboard, ground, text, labels, shadows or border. This is one front-facing sprite, not a sprite sheet.",
+      "posePrompt": "Use case: precise-object-edit. Input 1 is the exact pose/facing/framing to upgrade (LEVEL 2). Input 2 is the approved LEVEL 3 costume/equipment design reference. Make ONE sprite: transfer the level-3 design from input 2 onto the pose of input 1. Keep the green cactus cowboy identity and brown cowboy hat. Upgrade to elite dark steel shoulder, forearm and boot armor with strong warm gold trim, burgundy red poncho with gold border, golden hatband with one small star badge, and a reinforced compact rotary cactus launcher with gold barrel collar. Keep cactus green and readable; do not add spikes extending the silhouette. Pose identifier: kaktus_lvl2_hinten_variante_01. Preserve input 1 body orientation exactly: back views show the back, profiles stay profiles, three-quarter views retain their side; do NOT turn into the front-facing reference. Keep original body height/proportions and footprint, pixel density and crisp coarse pixel art. Consistent costume and weapon across views. Full body including hat, feet and entire weapon. Actual transparent RGBA PNG background and clear gaps between limbs, no checkerboard/background/ground/shadow/text/labels. One character only."
+    },
+    {
+      "kind": "Geblease",
+      "frontPrompt": "Use case: precise-object-edit. Create the LEVEL 3 upgrade of the supplied LEVEL 2 pixel-art tower sprite. Keep the red-haired balloon hunter identity, blue uniform, orange chest armor, aviator cap and goggles. Upgrade to elite cobalt-blue and polished steel plated shoulder/forearm/knee armor with warm gold trim, gold-framed cyan goggles, reinforced orange chest plate and a red-and-gold powered harpoon launcher with a compact cyan energy cell and its yellow cord. Keep the same silhouette and human proportions. Preserve EXACT pose, facing direction, canvas aspect ratio, body height and silhouette footprint of the reference. Full body, isolated single character, crisp pixel-art blocks at the SAME coarse pixel density, black outlines, game-ready readable at 22 pixels tall. Change equipment/color details to communicate upgrade, NOT scale. Actual transparent RGBA background, including gaps around weapon and limbs; no black/white background, checkerboard, ground, text, labels, shadows or border. This is one front-facing sprite, not a sprite sheet.",
+      "posePrompt": "Use case: precise-object-edit. Input 1 is the exact pose/facing/framing to upgrade (LEVEL 2). Input 2 is the LEVEL 3 costume/equipment design reference. Make ONE sprite: transfer the level-3 design from input 2 onto the pose of input 1. Keep the red-haired balloon hunter identity, blue uniform, orange chest armor, aviator cap and goggles. Upgrade to elite cobalt-blue and polished steel plated shoulder/forearm/knee armor with warm gold trim, gold-framed cyan goggles, reinforced orange chest plate and a red-and-gold powered harpoon launcher with a compact cyan energy cell and its yellow cord. Keep the same silhouette and human proportions. Pose identifier: geblaese_lvl2_hinten_links. Preserve input 1 body orientation exactly: back views show the back, profiles stay profiles, three-quarter views retain their side; do NOT turn into the front-facing reference. Keep original body height/proportions and footprint, pixel density and crisp coarse pixel art. Consistent costume and weapon across views. Full body including hat, feet and entire weapon. Actual transparent RGBA PNG background and clear gaps between limbs, no checkerboard/background/ground/shadow/text/labels. One character only."
+    },
+    {
+      "kind": "Lupe",
+      "frontPrompt": "Use case: precise-object-edit. Create the LEVEL 3 upgrade of the supplied LEVEL 2 pixel-art tower sprite. Keep the brown-leather steampunk rifleman identity, cap, goggles and backpack cylinders. Upgrade to dark navy steel armor with rich gold/brass trim over the brown leather, vivid burgundy scarf, gold goggles, cyan-lit compact backpack energy cells, and an upgraded double-barrel energy rifle with gold lens rings and restrained bright cyan accents. No beams, particle effects or extra floating components. Preserve EXACT pose, facing direction, canvas aspect ratio, body height and silhouette footprint of the reference. Full body, isolated single character, crisp pixel-art blocks at the SAME coarse pixel density, black outlines, game-ready readable at 22 pixels tall. Change equipment/color details to communicate upgrade, NOT scale. Actual transparent RGBA background, including gaps around weapon and limbs; no black/white background, checkerboard, ground, text, labels, shadows or border. This is one front-facing sprite, not a sprite sheet.",
+      "posePrompt": "Use case: precise-object-edit. Input 1 is the exact pose/facing/framing to upgrade (LEVEL 2). Input 2 is the LEVEL 3 costume/equipment design reference. Make ONE sprite: transfer the level-3 design from input 2 onto the pose of input 1. Keep the brown-leather steampunk rifleman identity, cap, goggles and backpack cylinders. Upgrade to dark navy steel armor with rich gold/brass trim over the brown leather, vivid burgundy scarf, gold goggles, cyan-lit compact backpack energy cells, and an upgraded double-barrel energy rifle with gold lens rings and restrained bright cyan accents. No beams, particle effects or extra floating components. Pose identifier: lupe_lvl2_hinten_links. Preserve input 1 body orientation exactly: back views show the back, profiles stay profiles, three-quarter views retain their side; do NOT turn into the front-facing reference. Keep original body height/proportions and footprint, pixel density and crisp coarse pixel art. Consistent costume and weapon across views. Full body including hat, feet and entire weapon. Actual transparent RGBA PNG background and clear gaps between limbs, no checkerboard/background/ground/shadow/text/labels. One character only."
+    }
+  ],
+  "files": [
+    {
+      "kind": "Kaktus",
+      "source": "kaktus_lvl2_hinten_variante_01.png",
+      "output": "Kaktus/kaktus_lvl3_hinten_variante_01.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-303e4ad4-ddc5-4087-a789-9b09bf6ec2df.png"
+    },
+    {
+      "kind": "Kaktus",
+      "source": "kaktus_lvl2_hinten_variante_02.png",
+      "output": "Kaktus/kaktus_lvl3_hinten_variante_02.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-c6c75da8-6d51-4fe5-bfcf-03e669aad004.png"
+    },
+    {
+      "kind": "Kaktus",
+      "source": "kaktus_lvl2_rechts_profil_variante_01.png",
+      "output": "Kaktus/kaktus_lvl3_rechts_profil_variante_01.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-5d96f693-2459-4815-abf7-dbc222ccbe9a.png"
+    },
+    {
+      "kind": "Kaktus",
+      "source": "kaktus_lvl2_rechts_profil_variante_02.png",
+      "output": "Kaktus/kaktus_lvl3_rechts_profil_variante_02.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-f4bae879-b86a-4d47-a833-7640713d8a43.png"
+    },
+    {
+      "kind": "Kaktus",
+      "source": "kaktus_lvl2_vorne_links.png",
+      "output": "Kaktus/kaktus_lvl3_vorne_links.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-1d8c762d-ecc5-42ea-bcaf-4e88de4ae528.png"
+    },
+    {
+      "kind": "Kaktus",
+      "source": "kaktus_lvl2_vorne_rechts_variante_01.png",
+      "output": "Kaktus/kaktus_lvl3_vorne_rechts_variante_01.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-98cb1e42-1593-409d-a70c-1243e6eedfb3.png"
+    },
+    {
+      "kind": "Kaktus",
+      "source": "kaktus_lvl2_vorne_rechts_variante_02.png",
+      "output": "Kaktus/kaktus_lvl3_vorne_rechts_variante_02.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-4985e474-6a1b-4a2c-950f-6079dbad34b0.png"
+    },
+    {
+      "kind": "Kaktus",
+      "source": "kaktus_lvl2_vorne.png",
+      "output": "Kaktus/kaktus_lvl3_vorne.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-c2155738-4f40-4707-bbe1-f6e7e1565561.png"
+    },
+    {
+      "kind": "Geblease",
+      "source": "geblaese_lvl2_hinten_links.png",
+      "output": "Geblease/geblaese_lvl3_hinten_links.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-81ee0ac9-b141-4452-9a6b-ae69999e18ea.png"
+    },
+    {
+      "kind": "Geblease",
+      "source": "geblaese_lvl2_hinten_rechts.png",
+      "output": "Geblease/geblaese_lvl3_hinten_rechts.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-96320ddc-0ea1-41d7-a534-0891931b4c63.png"
+    },
+    {
+      "kind": "Geblease",
+      "source": "geblaese_lvl2_hinten.png",
+      "output": "Geblease/geblaese_lvl3_hinten.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-52a38853-9bdc-46dc-9f25-3ba2def61048.png"
+    },
+    {
+      "kind": "Geblease",
+      "source": "geblaese_lvl2_rechts_profil.png",
+      "output": "Geblease/geblaese_lvl3_rechts_profil.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-9cd85c9e-16f2-42a8-92de-70187fe5c138.png"
+    },
+    {
+      "kind": "Geblease",
+      "source": "geblaese_lvl2_vorne_links.png",
+      "output": "Geblease/geblaese_lvl3_vorne_links.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-3d1676af-4b92-4fd1-beb0-ee726915c797.png"
+    },
+    {
+      "kind": "Geblease",
+      "source": "geblaese_lvl2_vorne_rechts.png",
+      "output": "Geblease/geblaese_lvl3_vorne_rechts.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-1871a81c-7734-4f1a-bfab-a77025f9b2c9.png"
+    },
+    {
+      "kind": "Geblease",
+      "source": "geblaese_lvl2_vorne_variante_01.png",
+      "output": "Geblease/geblaese_lvl3_vorne_variante_01.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-be945d4f-485e-4fd0-a5c6-aa82a322bf5d.png"
+    },
+    {
+      "kind": "Geblease",
+      "source": "geblaese_lvl2_vorne_variante_02.png",
+      "output": "Geblease/geblaese_lvl3_vorne_variante_02.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-2cce17a4-2d68-4758-a478-2bc0a0cd449b.png"
+    },
+    {
+      "kind": "Lupe",
+      "source": "lupe_lvl2_hinten_links.png",
+      "output": "Lupe/lupe_lvl3_hinten_links.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-afce0df7-869b-4a7a-a958-5a015c6dff63.png"
+    },
+    {
+      "kind": "Lupe",
+      "source": "lupe_lvl2_hinten.png",
+      "output": "Lupe/lupe_lvl3_hinten.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-e3a662bf-a6d7-4d11-9c8d-f77927473cc2.png"
+    },
+    {
+      "kind": "Lupe",
+      "source": "lupe_lvl2_links_profil.png",
+      "output": "Lupe/lupe_lvl3_links_profil.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-46b7b18c-bcf3-41bd-a47a-463ed05dcadf.png"
+    },
+    {
+      "kind": "Lupe",
+      "source": "lupe_lvl2_rechts_profil.png",
+      "output": "Lupe/lupe_lvl3_rechts_profil.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-bc7e748f-91fc-4552-b449-9af16b749110.png"
+    },
+    {
+      "kind": "Lupe",
+      "source": "lupe_lvl2_vorne_draufsicht.png",
+      "output": "Lupe/lupe_lvl3_vorne_draufsicht.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-c6bfaa0f-f8c7-440d-81a9-5d3f237950d1.png"
+    },
+    {
+      "kind": "Lupe",
+      "source": "lupe_lvl2_vorne_links.png",
+      "output": "Lupe/lupe_lvl3_vorne_links.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-c0aec225-ea4d-41d5-b50c-669196ca4cbd.png"
+    },
+    {
+      "kind": "Lupe",
+      "source": "lupe_lvl2_vorne_rechts.png",
+      "output": "Lupe/lupe_lvl3_vorne_rechts.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-592f15b2-d0b7-4699-8e65-b9adb9f93ab2.png"
+    },
+    {
+      "kind": "Lupe",
+      "source": "lupe_lvl2_vorne.png",
+      "output": "Lupe/lupe_lvl3_vorne.png",
+      "generated": "C:\\Users\\k.drozd\\.codex\\generated_images\\01a11f98-1ad5-7e13-89b8-7f6ca4420f4e\\exec-b6626d4f-5aff-4d24-9978-5fbec681ae5c.png"
+    }
+  ]
+}
