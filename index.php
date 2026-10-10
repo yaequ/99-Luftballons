@@ -31,7 +31,7 @@ $portalMode = defined('GAME_PORTAL_MODE') && GAME_PORTAL_MODE === true;
           <details class="home-menu pixel-frame" id="game-menu">
             <summary aria-label="Spielmenü öffnen"><span aria-hidden="true">☰</span> Menü</summary>
             <div class="home-menu__buttons">
-              <?php if ($portalMode): ?><a class="pixel-btn" href="../menu.php">Basislager</a><a class="pixel-btn" href="../leaderboard.php">Bestenliste</a><?php endif; ?>
+              <?php if ($portalMode): ?><a class="pixel-btn" href="menu.php">Basislager</a><a class="pixel-btn" href="leaderboard.php">Bestenliste</a><?php endif; ?>
               <a class="pixel-btn" href="<?php echo $portalMode ? 'portal.php' : 'index.php'; ?>">Neues Spiel</a>
               <a class="pixel-btn" href="anleitung.php" target="_blank" rel="noopener">Anleitung</a>
             </div>
@@ -140,7 +140,7 @@ $portalMode = defined('GAME_PORTAL_MODE') && GAME_PORTAL_MODE === true;
       <button id="btn-confirm-remove-tower" class="pixel-btn pixel-btn--primary" type="button">Ja, entfernen</button>
     </div>
   </dialog>
-  <?php if ($portalMode): ?><script>window.GAME_PORTAL = { resultUrl: '../save-match.php' };</script><?php endif; ?>
+  <?php if ($portalMode): ?><script>window.GAME_PORTAL = { resultUrl: 'save-match.php' };</script><?php endif; ?>
   <script src="game.bundle.js"></script>
 </body>
 </html>

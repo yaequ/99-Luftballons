@@ -1,20 +1,20 @@
 99 LUFTBALLONS - AKTUELLER SPIELSTAND ALS PHP-FASSUNG
 
 EIGENSTAENDIG TESTEN
-Den gesamten Ordner game-PHP-IONOS auf einen PHP-Webserver kopieren.
+Den Inhalt dieses Branches direkt in das Zielverzeichnis eines PHP-Webservers kopieren.
 index.php im Browser ueber den Server aufrufen, nicht per Doppelklick.
 Dieser Einstieg funktioniert ohne Anmeldung und speichert keine Ergebnisse.
 
 HINWEIS ZUM BRANCH DEV-CLEAN
-Dieser Branch enthaelt nur diesen Spielordner, kein Portal-Backend.
+Die Spiel-Dateien liegen direkt im Branch-Hauptverzeichnis. Es ist kein Portal-Backend enthalten.
 Fuer den eigenstaendigen Betrieb index.php verwenden.
 portal.php setzt das separat vorhandene Backend voraus.
 
 IN DAS BESTEHENDE PORTAL EINBINDEN
-Den Ordner neben auth.php und save-match.php des bestehenden Portals ablegen.
-portal.php aufrufen: nutzt require_login() aus ../auth.php.
-Der Link fuer das KI-Spiel muss dann auf game-PHP-IONOS/portal.php zeigen.
-Ergebnisse gehen an ../save-match.php mit result, duration_seconds und round_reached.
+Fuer eine Portal-Integration muessen auth.php und save-match.php im selben Verzeichnis wie portal.php liegen. Die oeffentliche index.php nicht ueber eine bestehende Portal-Startseite kopieren; die Integration separat abstimmen.
+portal.php aufrufen: nutzt require_login() aus auth.php.
+Der Link fuer das KI-Spiel muss dann auf portal.php zeigen.
+Ergebnisse gehen an save-match.php mit result, duration_seconds und round_reached.
 Das vorhandene Portal braucht seine konfigurierte Datenbank und Abhaengigkeiten.
 Diese Dateien und Einstellungen werden nicht aus der Referenz kopiert.
 index.php bleibt als eigenstaendige, oeffentliche Testseite erreichbar.
