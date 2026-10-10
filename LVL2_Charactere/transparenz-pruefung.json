@@ -1,0 +1,218 @@
+[
+  {
+    "file": "Geblease\\geblaese_lvl2_hinten.png",
+    "size": [
+      1073,
+      1466
+    ],
+    "transparent_percent": 75.88,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Geblease\\geblaese_lvl2_hinten_links.png",
+    "size": [
+      1073,
+      1466
+    ],
+    "transparent_percent": 71.52,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Geblease\\geblaese_lvl2_hinten_rechts.png",
+    "size": [
+      1073,
+      1466
+    ],
+    "transparent_percent": 74.37,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Geblease\\geblaese_lvl2_rechts_profil.png",
+    "size": [
+      1075,
+      1463
+    ],
+    "transparent_percent": 84.67,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Geblease\\geblaese_lvl2_vorne_links.png",
+    "size": [
+      1073,
+      1466
+    ],
+    "transparent_percent": 77.27,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Geblease\\geblaese_lvl2_vorne_rechts.png",
+    "size": [
+      1073,
+      1466
+    ],
+    "transparent_percent": 77.53,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Geblease\\geblaese_lvl2_vorne_variante_01.png",
+    "size": [
+      1073,
+      1466
+    ],
+    "transparent_percent": 77.99,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Geblease\\geblaese_lvl2_vorne_variante_02.png",
+    "size": [
+      1073,
+      1466
+    ],
+    "transparent_percent": 77.86,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Kaktus\\kaktus_lvl2_hinten_variante_01.png",
+    "size": [
+      1132,
+      1389
+    ],
+    "transparent_percent": 68.76,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Kaktus\\kaktus_lvl2_hinten_variante_02.png",
+    "size": [
+      1136,
+      1385
+    ],
+    "transparent_percent": 70.36,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Kaktus\\kaktus_lvl2_rechts_profil_variante_01.png",
+    "size": [
+      1136,
+      1385
+    ],
+    "transparent_percent": 70.52,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Kaktus\\kaktus_lvl2_rechts_profil_variante_02.png",
+    "size": [
+      1136,
+      1385
+    ],
+    "transparent_percent": 74.8,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Kaktus\\kaktus_lvl2_vorne.png",
+    "size": [
+      1132,
+      1389
+    ],
+    "transparent_percent": 68.1,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Kaktus\\kaktus_lvl2_vorne_links.png",
+    "size": [
+      1127,
+      1395
+    ],
+    "transparent_percent": 71.99,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Kaktus\\kaktus_lvl2_vorne_rechts_variante_01.png",
+    "size": [
+      1132,
+      1389
+    ],
+    "transparent_percent": 71.52,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Kaktus\\kaktus_lvl2_vorne_rechts_variante_02.png",
+    "size": [
+      1136,
+      1385
+    ],
+    "transparent_percent": 71.02,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Lupe\\lupe_lvl2_hinten.png",
+    "size": [
+      1002,
+      1570
+    ],
+    "transparent_percent": 65.64,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Lupe\\lupe_lvl2_hinten_links.png",
+    "size": [
+      1161,
+      1354
+    ],
+    "transparent_percent": 66.08,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Lupe\\lupe_lvl2_links_profil.png",
+    "size": [
+      1004,
+      1567
+    ],
+    "transparent_percent": 62.46,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Lupe\\lupe_lvl2_rechts_profil.png",
+    "size": [
+      1004,
+      1567
+    ],
+    "transparent_percent": 58.19,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Lupe\\lupe_lvl2_vorne.png",
+    "size": [
+      1004,
+      1566
+    ],
+    "transparent_percent": 61.82,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Lupe\\lupe_lvl2_vorne_draufsicht.png",
+    "size": [
+      1161,
+      1354
+    ],
+    "transparent_percent": 55.26,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Lupe\\lupe_lvl2_vorne_links.png",
+    "size": [
+      1161,
+      1354
+    ],
+    "transparent_percent": 66.43,
+    "original_rgb_unchanged": true
+  },
+  {
+    "file": "Lupe\\lupe_lvl2_vorne_rechts.png",
+    "size": [
+      1161,
+      1354
+    ],
+    "transparent_percent": 65.4,
+    "original_rgb_unchanged": true
+  }
+]
