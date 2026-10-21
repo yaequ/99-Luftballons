@@ -1,10 +1,15 @@
-import { CONFIG } from './modules/config.js';
-import { ASSETS, whenImageReady } from './modules/assets.js';
-import { createInitialState } from './modules/state.js';
-import { mapPathPoint, canBuildAt } from './modules/building.js';
+import { grantRoundGold } from './modules/economy.js';
+import { CONFIG } from './modules/ai-config.js';
+import { ASSETS, whenImageReady } from './modules/ai-assets.js';
+import { createInitialState } from './modules/ai-state.js';
+import { mapPathPoint, canBuildAt } from './modules/ai-building.js';
 import { buyAITower } from './modules/ai.js';
-import { createRenderer } from './modules/renderer.js';
+import { createRenderer } from './modules/ai-renderer.js';
+import { canControlTowers, hasFreeBuild, createTower, towerPlacementResult, purchaseTower } from './modules/towers.js';
+import { createTowerControls } from './modules/tower-controls.js';
+import { updateMergeEffect } from './modules/merge-effects.js';
 import * as RoundConfig from './rounds.js';
+import { sendBatchSize, isSendUnlocked, sendIncomeBonus, queuePlayerSend } from './modules/sending.js';
 
 /* 99 LUFTBALLONS – Vanilla HTML5 Canvas Tower Defense */
 
@@ -14,7 +19,6 @@ const screens = {
 };
 
 const ui = {
-  mapName: document.getElementById('map-name'),
   wave: document.getElementById('wave-counter'),
   p1Hp: document.getElementById('p1-hp'),
   p1Gold: document.getElementById('p1-gold'),
@@ -61,13 +65,30 @@ let toastTimer = 0;
 let startPending = false;
 
 let gameState = createInitialState();
-const { renderSide, renderTowerPortraits, renderBalloonPortraits } = createRenderer(() => gameState, mousePos);
+const { renderSide, renderTowerPortraits, renderBalloonPortraits } = createRenderer(() => gameState, mousePos, () => towerControls.view);
+const towerControls = createTowerControls({
+  canvas: canvasPlayer,
+  panel: document.getElementById('tower-actions'),
+  label: document.getElementById('selected-tower-label'),
+  feedback: document.getElementById('tower-feedback'),
+  removeButton: document.getElementById('btn-remove-tower'),
+  dialog: document.getElementById('dialog-remove-tower'),
+  cancelButton: document.getElementById('btn-cancel-remove-tower'),
+  confirmButton: document.getElementById('btn-confirm-remove-tower'),
+  getState: () => gameState,
+  clearBuildSelection: clearTowerSelection,
+  placeTower: placeSelectedTower,
+  onChange: () => renderSide(ctxPlayer, gameState.player, true),
+  onMessage: showToast
+});
 
 async function loadMatchAssets() {
   const requiredAssets = [
     gameState.player.map.image,
     gameState.enemy.map.image,
     ...Object.values(ASSETS.characters).flat(),
+    ...Object.values(ASSETS.characterUpgrades).flatMap((frames) => Object.values(frames)),
+    ...Object.values(ASSETS.characterLevel3).flatMap((frames) => Object.values(frames)),
     ...Object.values(ASSETS.balloons).flat(),
     ASSETS.boss
   ];
@@ -88,6 +109,8 @@ document.getElementById('btn-cancel-load').addEventListener('click', returnToHom
 ui.startRound.addEventListener('click', () => {
   if (startPending || gameState.paused) return;
   if (!gameState.active && gameState.currentRound === 0) {
+    gameState.preparing = false;
+    gameState.player.freeBuildsRemaining = 0;
     gameState.active = true;
     clearTowerSelection();
     lastFrameTime = performance.now();
@@ -120,18 +143,13 @@ canvasPlayer.addEventListener('pointerleave', () => {
   mousePos.onCanvas = false;
 });
 
-canvasPlayer.addEventListener('pointerdown', (event) => {
-  event.preventDefault();
-  updatePointerPosition(event);
-  placeSelectedTower();
-});
-
 document.addEventListener('visibilitychange', () => {
   lastFrameTime = performance.now();
   accumulator = 0;
 });
 
 document.addEventListener('keydown', (event) => {
+  if (document.getElementById('dialog-remove-tower').open) return;
   if (event.key === 'Escape' && ui.gameMenu.open) {
     ui.gameMenu.removeAttribute('open');
     ui.gameMenu.querySelector('summary').focus();
@@ -178,12 +196,14 @@ function updatePointerPosition(event) {
 async function startGame(retry = false) {
   if (startPending || gameState.paused) return;
   startPending = true;
+  towerControls.clear();
   if (!retry) gameState = createInitialState();
   ui.loadErrorModal.classList.remove('active');
   try {
     await loadMatchAssets();
     cancelAnimationFrame(animationFrameId);
     gameState.active = false;
+    gameState.preparing = true;
     screens.lobby.classList.remove('active');
     screens.game.classList.add('active');
     ui.modalGameOver.classList.remove('active');
@@ -192,7 +212,7 @@ async function startGame(retry = false) {
     ui.autoStart.checked = gameState.autoStart;
     setControlsExpanded(true);
     clearTowerSelection();
-    ui.mapTip.querySelector('span:last-child').textContent = 'Klicke auf „Spiel starten“, um die Partie zu beginnen.';
+    ui.mapTip.querySelector('span:last-child').textContent = 'Vor dem Start drei kostenlose Türme auf freien Bauflächen platzieren.';
     updateUI();
     renderSide(ctxPlayer, gameState.player, true);
     renderSide(ctxEnemy, gameState.enemy, false);
@@ -219,7 +239,8 @@ function setControlsExpanded(expanded) {
 }
 
 function selectTower(type) {
-  if (!gameState.active || gameState.paused) return;
+  if (!canControlTowers(gameState)) return;
+  towerControls.clear();
   gameState.selectedTowerType = gameState.selectedTowerType === type ? null : type;
   gameState.buildCursor.active = Boolean(gameState.selectedTowerType);
 
@@ -248,20 +269,30 @@ function clearTowerSelection() {
   });
   ui.mapTip.querySelector('.map-tip__step').textContent = '1';
   ui.mapTip.querySelector('span:last-child').textContent = 'Turm wählen und auf einer dunklen Baufläche platzieren.';
+  towerControls.updateFeedback();
 }
 
 function announceBuildCursor() {
   const { x, y } = gameState.buildCursor;
-  const result = canBuildAt(gameState.player, gameState.selectedTowerType, x, y);
-  const state = result === true ? 'gültiger Bauplatz' : result === 'occupied' ? 'belegt' : result === 'gold' ? 'nicht genug Gold' : 'keine Baufläche';
-  ui.mapTip.querySelector('span:last-child').textContent = `${CONFIG.TOWERS[gameState.selectedTowerType].name}: Position ${x}/${y}, ${state}. Enter platziert.`;
+  towerControls.previewPlacement(x, y);
+  const { result, target } = towerPlacementResult(gameState.player, gameState.selectedTowerType, x, y);
+  const state = result === 'merge' ? `Zu Stufe ${target.level + 1} verschmelzen`
+    : result === 'build' ? 'gültiger Bauplatz' : result === 'gold' ? 'nicht genug Gold' : 'ungültiges Ziel';
+  ui.mapTip.querySelector('span:last-child').textContent = `${CONFIG.TOWERS[gameState.selectedTowerType].name}: Position ${x}/${y}, ${state}. Enter bestätigt.`;
 }
 
-function placeSelectedTower(x = mousePos.x, y = mousePos.y) {
-  if (!gameState.selectedTowerType || gameState.paused) return;
-  const result = tryBuildTower(gameState.player, gameState.selectedTowerType, x, y);
-
-  if (result === true) clearTowerSelection();
+function placeSelectedTower(x = mousePos.x, y = mousePos.y, hitX = x, hitY = y) {
+  if (!canControlTowers(gameState) || !gameState.selectedTowerType) return;
+  const outcome = purchaseTower(gameState.player, gameState.selectedTowerType, x, y, hitX, hitY);
+  if (outcome.result === 'build' || outcome.result === 'merge') {
+    clearTowerSelection();
+    towerControls.finishPlacement(outcome.result === 'merge' ? outcome.tower : null);
+    if (outcome.result === 'merge') showToast(`Verschmolzen: ${CONFIG.TOWERS[outcome.tower.type].name}, Stufe ${outcome.tower.level}.`);
+    updateUI();
+  } else if (outcome.result === 'gold') {
+    showToast('Nicht genug Gold.');
+  }
+  return outcome;
 }
 
 function tryBuildTower(side, type, x, y, isFree = false) {
@@ -271,30 +302,13 @@ function tryBuildTower(side, type, x, y, isFree = false) {
   const towerData = CONFIG.TOWERS[type];
   if (!isFree) side.gold -= towerData.cost;
 
-  side.towers.push({
-    x, y, type,
-    range: towerData.range,
-    damage: towerData.damage,
-    fireRate: towerData.fireRate,
-    cooldown: 0,
-    color: towerData.color,
-    frameIndex: 0
-  });
+  side.towers.push(createTower(type, x, y));
   updateUI();
   return true;
 }
 
 function sendBalloonToEnemy(type) {
-  if (!gameState.active || gameState.paused) return;
-  const balloonData = CONFIG.BALLOONS[type];
-  if (!balloonData || !Number.isFinite(balloonData.cost)) return;
-  if (gameState.player.gold < balloonData.cost) {
-    return;
-  }
-
-  gameState.player.gold -= balloonData.cost;
-  gameState.player.income += balloonData.income;
-  gameState.enemy.sendQueue.push({ type, remaining: CONFIG.SEND_BATCH_SIZE });
+  if (!queuePlayerSend(gameState, type)) return;
   updateSentBalloons(gameState.enemy, 0);
   updateUI();
 }
@@ -336,6 +350,7 @@ function spawnBalloon(targetSide, type, fromRound = false) {
 function startNextRound() {
   if (!gameState.active || gameState.paused || ['spawning', 'clearing', 'completed'].includes(gameState.roundStatus) || gameState.currentRound >= CONFIG.WAVES) return;
   gameState.currentRound += 1;
+  grantRoundGold(gameState);
   const definition = RoundConfig.ROUND_DEFINITIONS[gameState.currentRound - 1];
   gameState.spawnGroups = RoundConfig.shuffledSpawnGroups(definition);
   gameState.spawnGroupIndex = 0;
@@ -412,6 +427,7 @@ function updateGame(deltaTime) {
     gameState.secondsElapsed += 1;
     gameState.player.gold += gameState.player.income;
     gameState.enemy.gold += gameState.enemy.income;
+    buyAITower(gameState, tryBuildTower);
     updateUI();
   }
 
@@ -449,6 +465,7 @@ function updateSide(side, isPlayer, deltaTime) {
   }
 
   side.towers.forEach((tower) => {
+    updateMergeEffect(tower, deltaTime);
     tower.cooldown = Math.max(0, tower.cooldown - deltaTime);
     const target = side.balloons.find((balloon) => Math.hypot(balloon.x - tower.x, balloon.y - tower.y) <= tower.range);
     if (!target) return;
@@ -519,25 +536,18 @@ function checkGameOver() {
 async function saveMatchResult(result) {
   if (gameState.resultSubmitted) return;
   gameState.resultSubmitted = true;
-
   try {
     const response = await fetch('../save-match.php', {
-      method: 'POST',
+      method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        result,
-        duration_seconds: Math.round(gameState.secondsElapsed),
-        round_reached: gameState.currentRound
-      }),
+      body: JSON.stringify({ result, duration_seconds: Math.round(gameState.secondsElapsed), round_reached: gameState.currentRound }),
       keepalive: true
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new Error('Result save failed');
     const data = await response.json();
-    if (!data.success) throw new Error('Match result was rejected');
-    if (Array.isArray(data.achievements) && data.achievements.length > 0) {
-      showToast(`${data.achievements.length} neues Abzeichen freigeschaltet!`, 5000);
-    }
-  } catch (error) {
+    if (!data.success) throw new Error('Result rejected');
+    if (Array.isArray(data.achievements) && data.achievements.length) showToast(`${data.achievements.length} neues Abzeichen freigeschaltet!`, 5000);
+  } catch {
     gameState.resultSubmitted = false;
     showToast('Ergebnis konnte nicht gespeichert werden.', 5000);
   }
@@ -545,6 +555,7 @@ async function saveMatchResult(result) {
 
 function endGame(result, title, message) {
   gameState.active = false;
+  towerControls.clear();
   cancelAnimationFrame(animationFrameId);
   saveMatchResult(result);
   ui.gameOverTitle.textContent = title;
@@ -559,6 +570,7 @@ function formatRound(definition) {
 }
 
 function updateUI() {
+  towerControls.updateFeedback();
   const pauseButton = document.getElementById('btn-pause');
   pauseButton.disabled = !gameState.active;
   pauseButton.textContent = gameState.paused ? 'Fortsetzen' : 'Pausieren';
@@ -568,10 +580,10 @@ function updateUI() {
   ui.autoStart.disabled = gameState.paused;
   updateHealthDisplay(gameState.player.hp, ui.p1Hp, ui.p1HealthMeter, ui.p1HealthFill);
   ui.p1Gold.textContent = Math.floor(gameState.player.gold);
-  ui.p1Income.textContent = `+${gameState.player.income}/s`;
+  ui.p1Income.textContent = `+${gameState.player.income.toLocaleString('de-DE', { maximumFractionDigits: 2 })}/s`;
   updateHealthDisplay(gameState.enemy.hp, ui.p2Hp, ui.p2HealthMeter, ui.p2HealthFill);
   ui.p2Gold.textContent = Math.floor(gameState.enemy.gold);
-  ui.p2Income.textContent = `+${gameState.enemy.income}/s`;
+  ui.p2Income.textContent = `+${gameState.enemy.income.toLocaleString('de-DE', { maximumFractionDigits: 2 })}/s`;
 
   ui.wave.textContent = `${gameState.currentRound}/${CONFIG.WAVES}`;
   ui.remainingEnemies.textContent = gameState.remainingEnemies;
@@ -582,7 +594,9 @@ function updateUI() {
   ui.roundCountdown.textContent = gameState.roundStatus === 'intermission'
     ? `Start in ${Math.ceil(gameState.intermissionRemaining)} Sekunden`
     : gameState.roundStatus === 'ready'
-      ? 'Warte auf Start'
+      ? gameState.preparing
+        ? `Vorbereitung: ${gameState.player.freeBuildsRemaining} kostenlose Türme übrig`
+        : 'Warte auf Start'
       : gameState.roundStatus === 'spawning'
         ? 'Ballons werden gesendet'
         : gameState.roundStatus === 'clearing'
@@ -602,14 +616,19 @@ function updateUI() {
   ui.timer.textContent = `${minutes}:${seconds}`;
 
   document.querySelectorAll('.build-btn').forEach((button) => {
-    button.disabled = !gameState.active || gameState.paused || gameState.player.gold < CONFIG.TOWERS[button.dataset.tower].cost;
+    const free = gameState.preparing && hasFreeBuild(gameState.player);
+    button.disabled = !canControlTowers(gameState) || (!free && gameState.player.gold < CONFIG.TOWERS[button.dataset.tower].cost);
+    button.querySelector('.action-card__cost strong').textContent = free ? 'Gratis' : CONFIG.TOWERS[button.dataset.tower].cost;
   });
   document.querySelectorAll('.send-btn').forEach((button) => {
     const balloonData = CONFIG.BALLOONS[button.dataset.balloon];
-    button.disabled = !gameState.active || gameState.paused || gameState.player.gold < balloonData.cost;
-    button.querySelector('.balloon-card__batch').textContent = `${CONFIG.SEND_BATCH_SIZE} Ballons`;
+    const unlocked = isSendUnlocked(button.dataset.balloon, gameState.currentRound);
+    button.disabled = !gameState.active || gameState.paused || !unlocked || gameState.player.gold < balloonData.cost;
+    button.querySelector('.balloon-card__batch').textContent = unlocked
+      ? `${sendBatchSize(gameState.currentRound, button.dataset.balloon)} Ballons`
+      : `Ab Runde ${balloonData.unlockRound}`;
     button.querySelector('.balloon-card__price').textContent = balloonData.cost;
-    button.querySelector('.balloon-card__income').textContent = `+${balloonData.income} Gold/s`;
+    button.querySelector('.balloon-card__income').textContent = `+${sendIncomeBonus(gameState, button.dataset.balloon).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Gold/s`;
   });
 }
 
@@ -637,11 +656,11 @@ function showToast(message, duration = 3000) {
   }, duration);
 }
 
-// The homepage links directly to this separate game page.
 startGame();
 
 function togglePause() {
   if (!gameState.active) return;
+  towerControls.clear();
   gameState.paused = !gameState.paused;
   cancelAnimationFrame(animationFrameId);
   lastFrameTime = performance.now();

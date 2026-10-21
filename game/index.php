@@ -13,7 +13,7 @@ require_login();
   <meta name="theme-color" content="#dff2f8">
   <title>99 Luftballons – KI-Duell</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=game-ui-polish-4">
+  <link rel="stylesheet" href="style.css?v=ai-upgrades-1">
 </head>
 <body>
   <div id="game-app">
@@ -52,7 +52,7 @@ require_login();
             <p>Deine Basis</p>
             <div class="combatant-metrics">
               <span class="hud__metric hud__metric--gold"><span>Gold</span><span class="hud__value hud__value--gold"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong id="p1-gold">100</strong></span></span>
-              <span class="hud__metric"><span>Einkommen</span><strong id="p1-income">+10/s</strong></span>
+              <span class="hud__metric"><span>Einkommen</span><strong id="p1-income">+5/s</strong></span>
             </div>
           </section>
 
@@ -60,7 +60,7 @@ require_login();
             <div class="round-focus__title"><span>Runde</span><strong id="wave-counter">0/30</strong><small id="round-state">Bereit</small></div>
             <div class="round-focus__details">
               <div class="round-summary"><span>Ballons verbleibend</span><strong id="remaining-enemies">0</strong></div>
-              <div class="round-summary round-summary--wide"><span>Nächste Runde</span><strong id="next-wave-preview">100 rote Ballons</strong><small id="round-countdown">Warte auf Start</small></div>
+              <div class="round-summary round-summary--wide"><span>Nächste Runde</span><strong id="next-wave-preview">Wird vorbereitet …</strong><small id="round-countdown">Warte auf Start</small></div>
             </div>
           </section>
 
@@ -77,8 +77,14 @@ require_login();
           <section class="map-panel map-panel--player" aria-labelledby="player-map-title">
             <header class="map-panel__header"><div><span>Deine Karte</span><strong id="player-map-title">Frostpfad</strong></div><span class="map-panel__status">Verteidigen</span></header>
             <div class="map-stage" id="player-map-stage">
-              <canvas id="canvas-player" class="game-canvas" width="960" height="720" tabindex="0" aria-label="Deine Verteidigungskarte. Turm wählen, mit Pfeiltasten Bauposition bewegen und mit Enter platzieren." aria-describedby="keyboard-help"></canvas>
+              <canvas id="canvas-player" class="game-canvas" width="960" height="720" tabindex="0" aria-label="Deine Verteidigungskarte. Turm wählen, mit Pfeiltasten Bauposition bewegen und mit Enter platzieren." aria-describedby="keyboard-help tower-help"></canvas>
               <div class="sr-only" id="map-tip" aria-live="polite"><span class="map-tip__step">1</span><span>Turm wählen und auf einer dunklen Baufläche platzieren.</span></div>
+            </div>
+            <p id="tower-help" class="tower-help">Neuen Turm wählen und auf einen gleichen Stufe-1-Turm klicken, um zu verschmelzen. Platzierte Türme gleicher Stufe lassen sich auch aufeinanderziehen.</p>
+            <p id="tower-feedback" class="tower-feedback" role="status" aria-live="polite" aria-atomic="true">Vor dem Spielstart drei kostenlose Türme platzieren.</p>
+            <div id="tower-actions" class="tower-actions" hidden>
+              <strong id="selected-tower-label" aria-live="polite"></strong>
+              <button id="btn-remove-tower" class="pixel-btn" type="button">Turm entfernen</button>
             </div>
             <footer class="map-health map-health--player">
               <div class="map-health__label"><span>Deine Lebenspunkte</span><strong id="p1-hp">99 / 99</strong></div>
@@ -108,18 +114,18 @@ require_login();
             <section class="control-panel" aria-labelledby="tower-panel-title">
             <div class="panel-heading"><div><span class="panel-kicker">Verteidigung</span><h2 id="tower-panel-title">Turm auswählen</h2></div><span class="panel-hint">Danach Baufläche anklicken oder Tastatur verwenden</span></div>
             <div class="action-grid action-grid--towers">
-              <button class="action-card build-btn" data-tower="cactus" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Kaktus</strong><span class="action-card__meta">Schneller Schaden</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>25</strong></span></span></button>
-              <button class="action-card build-btn" data-tower="fan" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Gebläse</strong><span class="action-card__meta">Kurze Abklingzeit</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>45</strong></span></span></button>
-              <button class="action-card build-btn" data-tower="lens" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Lupe</strong><span class="action-card__meta">Hoher Schaden</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>70</strong></span></span></button>
+              <button class="action-card build-btn" data-tower="cactus" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Kaktus</strong><span class="action-card__meta">Schneller Schaden</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>50</strong></span></span></button>
+              <button class="action-card build-btn" data-tower="fan" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Gebläse</strong><span class="action-card__meta">Kurze Abklingzeit</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>90</strong></span></span></button>
+              <button class="action-card build-btn" data-tower="lens" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Lupe</strong><span class="action-card__meta">Hoher Schaden</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>150</strong></span></span></button>
             </div>
             </section>
             <section class="control-panel control-panel--attacks" aria-labelledby="attack-panel-title">
             <div class="panel-heading"><div><span class="panel-kicker">Angriff</span><h2 id="attack-panel-title">Ballons senden</h2></div></div>
             <div class="action-grid action-grid--balloons">
-              <button class="balloon-card send-btn balloon-card--red" data-balloon="red" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="red" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Rot</strong><small class="balloon-card__batch">10 Ballons</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">10</strong></span><span class="income-chip balloon-card__income">+1 Gold/s</span></span></span></button>
-              <button class="balloon-card send-btn balloon-card--blue" data-balloon="blue" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="blue" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Blau</strong><small class="balloon-card__batch">10 Ballons</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">25</strong></span><span class="income-chip balloon-card__income">+2 Gold/s</span></span></span></button>
-              <button class="balloon-card send-btn balloon-card--green" data-balloon="green" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="green" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Grün</strong><small class="balloon-card__batch">10 Ballons</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">45</strong></span><span class="income-chip balloon-card__income">+4 Gold/s</span></span></span></button>
-              <button class="balloon-card send-btn balloon-card--yellow" data-balloon="yellow" type="button"><canvas class="balloon-card__portrait" data-balloon-portrait="yellow" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Gelb</strong><small class="balloon-card__batch">10 Ballons</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">70</strong></span><span class="income-chip balloon-card__income">+7 Gold/s</span></span></span></button>
+              <button class="balloon-card send-btn balloon-card--red" data-balloon="red" type="button" disabled><canvas class="balloon-card__portrait" data-balloon-portrait="red" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Rot</strong><small class="balloon-card__batch">Ab Runde 1</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">25</strong></span><span class="income-chip balloon-card__income">+0,1 Gold/s</span></span></span></button>
+              <button class="balloon-card send-btn balloon-card--blue" data-balloon="blue" type="button" disabled><canvas class="balloon-card__portrait" data-balloon-portrait="blue" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Blau</strong><small class="balloon-card__batch">Ab Runde 5</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">50</strong></span><span class="income-chip balloon-card__income">+0,2 Gold/s</span></span></span></button>
+              <button class="balloon-card send-btn balloon-card--green" data-balloon="green" type="button" disabled><canvas class="balloon-card__portrait" data-balloon-portrait="green" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Grün</strong><small class="balloon-card__batch">Ab Runde 10</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">90</strong></span><span class="income-chip balloon-card__income">+0,3 Gold/s</span></span></span></button>
+              <button class="balloon-card send-btn balloon-card--yellow" data-balloon="yellow" type="button" disabled><canvas class="balloon-card__portrait" data-balloon-portrait="yellow" width="64" height="64" aria-hidden="true"></canvas><span class="balloon-card__content"><strong>Gelb</strong><small class="balloon-card__batch">Ab Runde 15</small><span class="balloon-card__economy"><span class="price-chip"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong class="balloon-card__price">140</strong></span><span class="income-chip balloon-card__income">+0,5 Gold/s</span></span></span></button>
             </div>
             </section>
           </footer>
@@ -131,6 +137,13 @@ require_login();
     <div id="modal-load-error" class="modal" role="dialog" aria-modal="true" aria-labelledby="load-error-title"><div class="modal-content pixel-frame"><p class="eyebrow">Ladefehler</p><h2 id="load-error-title">Asset fehlt</h2><p id="load-error-message"></p><div class="modal-actions"><button id="btn-retry-load" class="pixel-btn pixel-btn--primary" type="button">Erneut versuchen</button><button id="btn-cancel-load" class="pixel-btn" type="button">Zum Basislager</button></div></div></div>
   </div>
   <div id="game-toast" class="game-toast" role="status" aria-live="polite" hidden></div>
-  <script src="game.bundle.js?v=game-ui-polish-5"></script>
+  <dialog id="dialog-remove-tower" class="tower-remove-dialog pixel-frame" aria-labelledby="remove-tower-question">
+    <p id="remove-tower-question">Möchten Sie diesen Turm wirklich entfernen?</p>
+    <div class="modal-actions">
+      <button id="btn-cancel-remove-tower" class="pixel-btn" type="button" autofocus>Abbrechen</button>
+      <button id="btn-confirm-remove-tower" class="pixel-btn pixel-btn--primary" type="button">Ja, entfernen</button>
+    </div>
+  </dialog>
+  <script src="game.bundle.js?v=ai-upgrades-1"></script>
 </body>
 </html>

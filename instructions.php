@@ -13,7 +13,7 @@ require __DIR__ . '/portal.php';
         <p class="eyebrow">Du gegen die KI</p><h2>Jede Basis zählt.</h2>
         <p>Du verteidigst deine eigene Karte, während die KI auf ihrer Karte baut. Ballons folgen den Wegen. Erreichen sie deine Basis, verlierst du Lebenspunkte. Mit Gold kaufst du Türme und schickst zusätzliche Ballons zum Gegner.</p>
         <div class="feature-grid">
-            <article><span class="step-number">01</span><h3>Vorbereiten</h3><p>Wähle einen Turm und platziere ihn auf einer dunklen Baufläche. Starte danach mit „Spiel starten“ die erste Runde.</p></article>
+            <article><span class="step-number">01</span><h3>Vorbereiten</h3><p>Im KI-Duell kannst du vor dem Start drei Türme kostenlos auf dunklen Bauflächen platzieren. Starte danach die erste Runde.</p></article>
             <article><span class="step-number">02</span><h3>Durchhalten</h3><p>Es gibt 30 Runden. Mit Auto-Start beginnt die nächste Runde nach der Rundenpause automatisch; andernfalls startest du sie selbst.</p></article>
             <article><span class="step-number">03</span><h3>Gewinnen</h3><p>Du gewinnst, wenn die KI keine Lebenspunkte mehr hat oder du alle 30 Runden überlebst. Erreicht deine Basis 0 HP, verlierst du.</p></article>
         </div>
@@ -21,23 +21,23 @@ require __DIR__ . '/portal.php';
     <section class="portal-panel portal-section" id="towers">
         <p class="eyebrow">Deine Verteidigung</p><h2>Drei Türme, drei Stärken.</h2>
         <div class="feature-grid">
-            <article><span class="tower-price">25 Gold</span><h3>Kaktus</h3><p>Günstiger Einstieg für deine Verteidigung. Geringer Schaden, kurze Reichweite.</p></article>
-            <article><span class="tower-price">45 Gold</span><h3>Gebläse</h3><p>Greift besonders häufig an und hat mehr Reichweite als der Kaktus.</p></article>
-            <article><span class="tower-price">70 Gold</span><h3>Lupe</h3><p>Hoher Schaden und die größte Reichweite. Dafür mehr Zeit zwischen den Angriffen.</p></article>
+            <article><span class="tower-price">50 Gold</span><h3>Kaktus</h3><p>Günstiger Einstieg für deine Verteidigung. Geringer Schaden, kurze Reichweite.</p></article>
+            <article><span class="tower-price">90 Gold</span><h3>Gebläse</h3><p>Greift besonders häufig an und hat mehr Reichweite als der Kaktus.</p></article>
+            <article><span class="tower-price">150 Gold</span><h3>Lupe</h3><p>Hoher Schaden und die größte Reichweite. Dafür mehr Zeit zwischen den Angriffen.</p></article>
         </div>
-        <p>Türme lassen sich auf den vorgesehenen Bauflächen platzieren. Achte darauf, dass ihr Radius den Weg abdeckt und du genug Gold übrig hast.</p>
+        <p>Diese Preise gelten für das KI-Duell. Gleichartige Türme derselben Stufe kannst du durch Ziehen aufeinander bis Stufe 3 verbessern. Neue Türme lassen sich auch auf einen passenden Stufe-1-Turm setzen. In Runde 20 erhalten beide Seiten einmalig zusätzliches Gold.</p>
     </section>
     <section class="portal-panel portal-section" id="balloons">
         <p class="eyebrow">Dein Angriff</p><h2>Mehr als nur bunte Ballons.</h2>
-        <p>Mit jedem Angriff schickst du eine Gruppe von 10 Ballons. Der Kauf erhöht zugleich dein Einkommen pro Sekunde. Die Farben unterscheiden sich in Widerstandskraft und Geschwindigkeit.</p>
+        <p>Im KI-Duell schaltest du Ballonfarben rundenweise frei. Ein Paket beginnt mit 3 Ballons und wächst alle drei Runden bis auf 10; gelbe Pakete enthalten höchstens 5. Der Kauf erhöht dein Einkommen pro Sekunde, höchstens um 0,5 pro Runde und insgesamt um 5. Die Farben unterscheiden sich in Widerstandskraft und Geschwindigkeit.</p>
         <div class="leaderboard-table-wrapper"><table class="leaderboard-table">
             <caption class="table-caption">Angriffskosten und Einkommen pro gekauftem Paket</caption>
             <thead><tr><th scope="col">Ballon</th><th scope="col">Kosten</th><th scope="col">Einkommen</th><th scope="col">Eigenschaft</th></tr></thead>
             <tbody>
-                <tr><th scope="row"><span class="balloon-dot red"></span> Rot</th><td>10 Gold</td><td>+1/s</td><td>1 HP · günstiger Angriff</td></tr>
-                <tr><th scope="row"><span class="balloon-dot blue"></span> Blau</th><td>25 Gold</td><td>+2/s</td><td>2 HP · am schnellsten</td></tr>
-                <tr><th scope="row"><span class="balloon-dot green"></span> Grün</th><td>45 Gold</td><td>+4/s</td><td>4 HP · widerstandsfähiger</td></tr>
-                <tr><th scope="row"><span class="balloon-dot yellow"></span> Gelb</th><td>70 Gold</td><td>+7/s</td><td>7 HP · langsam, aber robust</td></tr>
+                <tr><th scope="row"><span class="balloon-dot red"></span> Rot</th><td>25 Gold</td><td>bis +0,1/s</td><td>Ab Runde 1 · 1 HP</td></tr>
+                <tr><th scope="row"><span class="balloon-dot blue"></span> Blau</th><td>50 Gold</td><td>bis +0,2/s</td><td>Ab Runde 5 · 2 HP</td></tr>
+                <tr><th scope="row"><span class="balloon-dot green"></span> Grün</th><td>90 Gold</td><td>bis +0,3/s</td><td>Ab Runde 10 · 4 HP</td></tr>
+                <tr><th scope="row"><span class="balloon-dot yellow"></span> Gelb</th><td>140 Gold</td><td>bis +0,5/s</td><td>Ab Runde 15 · 7 HP</td></tr>
             </tbody>
         </table></div>
         <p><strong>Die Bosse:</strong> In Runde 29 kommt ein Boss, in Runde 30 kommen zwei. Jeder hat 150 HP und verursacht 25 Basisschaden, wenn er durchkommt. Bosse kannst du nicht selbst kaufen.</p>
