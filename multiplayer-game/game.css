@@ -37,6 +37,26 @@
 .mp-canvas-status[hidden] { display: none; }
 .mp-canvas-status.is-error { color: #a43f38; background: #f9e4dfea; }
 
+.mp-tower-help,
+.mp-tower-feedback { margin: 0; padding: 10px 18px; font-size: 12px; line-height: 1.45; }
+.mp-tower-help { color: var(--mp-muted); }
+.mp-tower-feedback { border-top: 1px solid var(--mp-line); background: var(--mp-soft); color: var(--mp-ink); }
+.mp-tower-feedback[data-state="hover"] { background: #e4f4fc; }
+.mp-tower-feedback[data-state="move"],
+.mp-tower-feedback[data-state="merge"] { background: #e0efdc; color: #28583a; }
+.mp-tower-feedback[data-state="invalid"] { background: #f9e4df; color: #a43f38; }
+.mp-tower-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 13px 18px; background: #e0efdc; color: var(--mp-ink); }
+.mp-tower-actions[hidden] { display: none; }
+.mp-tower-actions strong { font-size: 14px; }
+.mp-tower-actions button,
+.mp-remove-dialog button { padding: 10px 14px; border: 1px solid var(--mp-line); border-radius: 12px; background: var(--mp-paper); color: var(--mp-ink); font: inherit; font-weight: 800; cursor: pointer; }
+.mp-tower-actions button:disabled { cursor: not-allowed; opacity: .55; }
+.mp-remove-dialog { width: min(440px, calc(100% - 32px)); padding: 24px; border: 2px solid var(--mp-line); border-radius: 18px; background: var(--mp-paper); color: var(--mp-ink); }
+.mp-remove-dialog::backdrop { background: #17363db8; }
+.mp-remove-dialog p { margin: 0 0 20px; font-weight: 800; }
+.mp-remove-dialog > div { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 9px; }
+#multiplayer-confirm-remove { border-color: #a43f38; background: #c4544b; color: #fff; }
+
 .mp-map-tip {
     position: absolute;
     left: 12px;

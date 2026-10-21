@@ -5,7 +5,7 @@ import { createRenderer } from '../game/modules/ai-renderer.js';
 import { canBuildAt } from '../game/modules/ai-building.js';
 import { towerAtPoint, canMergeTowers, towerDropResult } from '../game/modules/towers.js';
 import { sendBatchSize, isSendUnlocked } from '../game/modules/sending.js';
-import { createMultiplayerEngine } from './engine.js?v=multiplayer-controls-2';
+import { createMultiplayerEngine } from './engine.js?v=multiplayer-controls-3';
 
 const shell = document.querySelector('.multiplayer-match-shell[data-local-engine="true"]');
 if (!shell) throw new Error('Multiplayer canvas shell not found.');
@@ -22,6 +22,13 @@ const startRoundButton = document.getElementById('multiplayer-start-round');
 const pauseButton = document.getElementById('multiplayer-pause');
 const autoStartInput = document.getElementById('multiplayer-auto-start');
 const localStatus = document.getElementById('multiplayer-local-status');
+const towerFeedback = document.getElementById('multiplayer-tower-feedback');
+const towerActions = document.getElementById('multiplayer-tower-actions');
+const selectedTowerLabel = document.getElementById('multiplayer-selected-tower-label');
+const removeTowerButton = document.getElementById('multiplayer-remove-tower');
+const removeDialog = document.getElementById('multiplayer-remove-dialog');
+const cancelRemoveButton = document.getElementById('multiplayer-cancel-remove');
+const confirmRemoveButton = document.getElementById('multiplayer-confirm-remove');
 const resultModal = document.getElementById('multiplayer-result-modal');
 const resultTitle = document.getElementById('multiplayer-result-title');
 const resultMessage = document.getElementById('multiplayer-result-message');
@@ -54,6 +61,7 @@ let resultDisplayed = false;
 let selectedTower = null;
 let hoveredTower = null;
 let towerDrag = null;
+let pendingRemoval = null;
 
 const engine = createMultiplayerEngine(playerMap, opponentMap, {
   ownSide,
@@ -121,7 +129,34 @@ function roundButtonLabel() {
   return state.currentRound === 0 ? 'Bereit für Runde 1' : `Bereit für Runde ${state.currentRound + 1}`;
 }
 
+function updateTowerSelection() {
+  if (selectedTower && !state.player.towers.includes(selectedTower)) selectedTower = null;
+  if (hoveredTower && !state.player.towers.includes(hoveredTower)) hoveredTower = null;
+  towerActions.hidden = !selectedTower;
+  if (selectedTower) selectedTowerLabel.textContent = `${CONFIG.TOWERS[selectedTower.type].name} · Stufe ${selectedTower.level}`;
+  removeTowerButton.disabled = !online || !assetsReady || state.paused || Boolean(state.result) || removeDialog.open;
+  const drag = towerDrag?.active ? towerDrag : null;
+  const tower = hoveredTower || selectedTower;
+  let message = state.currentRound === 0 && state.player.freeBuildsRemaining > 0
+    ? `Vorbereitung: noch ${state.player.freeBuildsRemaining} kostenlose Platzierungen. Danach Spiel starten. Kauf-Upgrades kosten regulär Gold.`
+    : 'Turm wählen oder platzierte Türme gleicher Stufe aufeinanderziehen.';
+  let feedbackState = 'idle';
+  if (state.paused) message = 'Spiel pausiert. Zum Verschieben und Verschmelzen bitte fortsetzen.';
+  else if (drag) {
+    message = drag.result === 'move' ? 'Loslassen zum Verschieben. Stufe und Abklingzeit bleiben erhalten.'
+      : drag.result === 'merge' ? `Loslassen zum Verschmelzen: ${CONFIG.TOWERS[drag.source.type].name} · Stufe ${drag.source.level + 1}.`
+        : 'Ungültiger Platz. Der Turm bleibt an seiner bisherigen Position.';
+    feedbackState = ['move', 'merge'].includes(drag.result) ? drag.result : 'invalid';
+  } else if (tower && online && assetsReady && !state.result) {
+    message = `${CONFIG.TOWERS[tower.type].name} · Stufe ${tower.level} · Schaden ${tower.damage.toLocaleString('de-DE', { maximumFractionDigits: 3 })}. Gedrückt halten und ziehen.`;
+    feedbackState = 'hover';
+  }
+  towerFeedback.textContent = message;
+  towerFeedback.dataset.state = feedbackState;
+}
+
 function updateInterface() {
+  updateTowerSelection();
   document.getElementById('your-gold').textContent = String(Math.floor(state.player.gold));
   document.getElementById('your-income').textContent = `+${state.player.income.toLocaleString('de-DE', { maximumFractionDigits: 2 })} Gold/s`;
   document.getElementById('opponent-gold').textContent = String(Math.floor(state.enemy.gold));
@@ -219,6 +254,8 @@ function applyEvent(event) {
     if (owner === 'player' && position) selectedTower = side.towers.find((tower) => tower.x === position.x && tower.y === position.y) || null;
   } else if (event.type === 'move') {
     engine.moveTowerFor(owner, Number(event.payload.source), Number(event.payload.x), Number(event.payload.y));
+  } else if (event.type === 'remove') {
+    engine.removeTowerFor(owner, Number(event.payload.source));
   }
   else if (event.type === 'send') engine.sendBalloonFor(owner, event.payload.balloon, true);
   else if (event.type === 'round_start') {
@@ -360,6 +397,7 @@ function updateTowerDrag(event) {
   setTip(2, towerDrag.result === 'move' ? 'Loslassen, um die Figur hierhin zu verschieben.'
     : towerDrag.result === 'merge' ? 'Loslassen, um die Figuren zu verschmelzen.'
       : 'Hier kann die Figur nicht abgelegt werden.');
+  updateTowerSelection();
 }
 
 function cancelTowerDrag() {
@@ -367,6 +405,7 @@ function cancelTowerDrag() {
   towerDrag = null;
   playerCanvas.classList.remove('is-dragging-tower');
   if (pointerId !== undefined && playerCanvas.hasPointerCapture(pointerId)) playerCanvas.releasePointerCapture(pointerId);
+  updateTowerSelection();
 }
 
 async function requestRoundReady() {
@@ -394,6 +433,37 @@ balloonButtons.forEach((button) => button.addEventListener('click', () => {
 startRoundButton.addEventListener('click', requestRoundReady);
 pauseButton.addEventListener('click', () => sendAction('pause', { paused: state.paused ? '0' : '1' }));
 autoStartInput.addEventListener('change', updateInterface);
+removeTowerButton.addEventListener('click', () => {
+  if (removeTowerButton.disabled || !selectedTower || !state.player.towers.includes(selectedTower)) return;
+  cancelTowerDrag();
+  pendingRemoval = selectedTower;
+  removeDialog.showModal();
+  updateTowerSelection();
+  cancelRemoveButton.focus();
+});
+cancelRemoveButton.addEventListener('click', () => removeDialog.close());
+removeDialog.addEventListener('cancel', (event) => {
+  if (confirmRemoveButton.disabled) event.preventDefault();
+});
+removeDialog.addEventListener('close', () => {
+  pendingRemoval = null;
+  updateTowerSelection();
+  if (selectedTower) removeTowerButton.focus({ preventScroll: true });
+});
+confirmRemoveButton.addEventListener('click', async () => {
+  const source = state.player.towers.indexOf(pendingRemoval);
+  if (source < 0 || !online || state.paused || state.result) {
+    removeDialog.close();
+    return;
+  }
+  confirmRemoveButton.disabled = true;
+  cancelRemoveButton.disabled = true;
+  const data = await sendAction('remove', { source: String(source) });
+  confirmRemoveButton.disabled = false;
+  cancelRemoveButton.disabled = false;
+  removeDialog.close();
+  if (data) { selectedTower = null; updateTowerSelection(); }
+});
 rematchButton.addEventListener('click', () => leaveFinishedMatch('multiplayer.php?rematch=1'));
 resultMenuButton.addEventListener('click', () => leaveFinishedMatch('game.php'));
 resultHistoryLink.addEventListener('click', (event) => { event.preventDefault(); leaveFinishedMatch(resultHistoryLink.href); });
@@ -404,19 +474,21 @@ playerCanvas.addEventListener('pointermove', (event) => {
   hoveredTower = !state.selectedTowerType && assetsReady && online && !state.paused
     ? towerAtPoint(state.player, point.x, point.y) : null;
   playerCanvas.classList.toggle('has-hovered-tower', Boolean(hoveredTower));
+  updateTowerSelection();
 });
 playerCanvas.addEventListener('pointerleave', () => {
   mousePosition.onCanvas = false; hoveredTower = null;
   playerCanvas.classList.remove('has-hovered-tower');
+  updateTowerSelection();
 });
 playerCanvas.addEventListener('pointerdown', (event) => {
-  if (event.button !== 0 || event.isPrimary === false || !assetsReady || !online || state.paused || state.result) return;
+  if (event.button !== 0 || event.isPrimary === false || !assetsReady || !online || state.paused || state.result || removeDialog.open) return;
   event.preventDefault(); updatePointer(event);
   playerCanvas.focus({ preventScroll: true });
   if (state.selectedTowerType) { placeTower(); return; }
   const point = pointerPoint(event);
   const source = towerAtPoint(state.player, point.x, point.y);
-  if (!source) { selectedTower = null; hoveredTower = null; return; }
+  if (!source) { selectedTower = null; hoveredTower = null; updateTowerSelection(); return; }
   const previousSelected = selectedTower;
   selectedTower = source;
   hoveredTower = null;
@@ -429,6 +501,7 @@ playerCanvas.addEventListener('pointerdown', (event) => {
   playerCanvas.classList.add('is-dragging-tower');
   playerCanvas.setPointerCapture(event.pointerId);
   setTip(2, `${CONFIG.TOWERS[source.type].name} · Stufe ${source.level} ausgewählt. Ziehen zum Verschieben oder Verschmelzen.`);
+  updateTowerSelection();
 });
 playerCanvas.addEventListener('pointerup', (event) => {
   if (!towerDrag || towerDrag.pointerId !== event.pointerId) return;
@@ -457,6 +530,9 @@ for (const eventName of ['pointercancel', 'lostpointercapture']) {
   });
 }
 playerCanvas.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !state.selectedTowerType && selectedTower) {
+    event.preventDefault(); selectedTower = null; updateTowerSelection(); return;
+  }
   if (!state.selectedTowerType) return;
   const movement = { ArrowLeft: [-CONFIG.GRID_SIZE, 0], ArrowRight: [CONFIG.GRID_SIZE, 0], ArrowUp: [0, -CONFIG.GRID_SIZE], ArrowDown: [0, CONFIG.GRID_SIZE] }[event.key];
   if (movement) {

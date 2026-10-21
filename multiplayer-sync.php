@@ -172,7 +172,7 @@ function multiplayer_build_zones(int $side): array
 
 function multiplayer_tower_layout(PDO $pdo, int $matchId, int $side): array
 {
-    $query = $pdo->prepare("SELECT event_type, payload FROM multiplayer_game_events WHERE match_id = ? AND actor_side = ? AND event_type IN ('build', 'merge', 'move') ORDER BY id");
+    $query = $pdo->prepare("SELECT event_type, payload FROM multiplayer_game_events WHERE match_id = ? AND actor_side = ? AND event_type IN ('build', 'merge', 'move', 'remove') ORDER BY id");
     $query->execute([$matchId, $side]);
     $towers = [];
     foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $event) {
@@ -189,6 +189,11 @@ function multiplayer_tower_layout(PDO $pdo, int $matchId, int $side): array
                 $towers[$source]['x'] = (float) ($payload['x'] ?? 0);
                 $towers[$source]['y'] = (float) ($payload['y'] ?? 0);
             }
+            continue;
+        }
+        if ($event['event_type'] === 'remove') {
+            $source = (int) ($payload['source'] ?? -1);
+            if (isset($towers[$source])) array_splice($towers, $source, 1);
             continue;
         }
         $target = (int) ($payload['target'] ?? -1);
@@ -252,6 +257,13 @@ function multiplayer_validate_move(PDO $pdo, int $matchId, int $side, int $sourc
         if ($index !== $source && hypot($tower['x'] - $x, $tower['y'] - $y) < 12) {
             throw new InvalidArgumentException('Der Zielpunkt ist bereits belegt.');
         }
+    }
+}
+
+function multiplayer_validate_remove(PDO $pdo, int $matchId, int $side, int $source): void
+{
+    if (!isset(multiplayer_tower_layout($pdo, $matchId, $side)[$source])) {
+        throw new InvalidArgumentException('Der ausgewählte Turm existiert nicht.');
     }
 }
 
@@ -323,6 +335,11 @@ function multiplayer_record_action(PDO $pdo, int $matchId, int $userId, string $
             multiplayer_validate_move($pdo, $matchId, $side, $source, $x, $y);
             multiplayer_insert_event($pdo, $matchId, $side, 'move', $actionId,
                 ['source' => $source, 'x' => $x, 'y' => $y]);
+        } elseif ($action === 'remove') {
+            $source = filter_var($input['source'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 99]]);
+            if ($source === false) throw new InvalidArgumentException('Ungültiger Turm.');
+            multiplayer_validate_remove($pdo, $matchId, $side, $source);
+            multiplayer_insert_event($pdo, $matchId, $side, 'remove', $actionId, ['source' => $source]);
         } elseif ($action === 'pause') {
             $paused = filter_var($input['paused'] ?? null, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             if ($paused === null) throw new InvalidArgumentException('Ungültiger Pausenstatus.');

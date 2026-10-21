@@ -101,6 +101,23 @@ check(restoredTwo.state.enemy.towers[0].x === 180,
 check(restoredTwo.state.currentRound === sideOne.state.currentRound && restoredTwo.state.player.gold === sideOne.state.enemy.gold,
   'Rounds and resources restore in absolute-side order');
 
+const removed = createMultiplayerEngine(map, map, { ownSide: 1 });
+const removedMirror = createMultiplayerEngine(map, map, { ownSide: 2 });
+removed.buildTower('cactus', 100, 40);
+removed.buildTower('fan', 140, 40);
+removedMirror.buildTowerFor('enemy', 'cactus', 100, 40);
+removedMirror.buildTowerFor('enemy', 'fan', 140, 40);
+check(removed.removeOwnTower(0) === true && removedMirror.removeTowerFor('enemy', 0) === true,
+  'Removing a tower replays on both sides of the online duel');
+check(removed.state.player.towers.length === 1 && removed.state.player.towers[0].type === 'fan'
+  && removedMirror.state.enemy.towers[0].type === 'fan', 'Removal shifts tower indices identically in both browsers');
+check(removed.removeOwnTower(4) === 'missing', 'An already missing tower cannot be removed again');
+const removedSnapshot = removed.exportSnapshot(7);
+const removedRestored = createMultiplayerEngine(map, map, { ownSide: 2 });
+check(removedRestored.restoreSnapshot(removedSnapshot) === true
+  && removedRestored.state.enemy.towers.length === 1
+  && removedRestored.state.enemy.towers[0].type === 'fan', 'Reconnect does not restore a removed tower');
+
 const goldBonus = createMultiplayerEngine(map, map);
 goldBonus.state.currentRound = 19;
 goldBonus.startRound(1);

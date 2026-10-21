@@ -38,7 +38,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online-Match – 99 Luftballons</title>
     <link rel="stylesheet" href="multiplayer-game.css?v=multiplayer-ui-2">
-    <link rel="stylesheet" href="multiplayer-game/game.css?v=multiplayer-controls-2">
+    <link rel="stylesheet" href="multiplayer-game/game.css?v=multiplayer-controls-3">
 </head>
 <body class="multiplayer-game-page">
     <main id="main-content" class="multiplayer-match-shell"
@@ -82,6 +82,12 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
             <article class="mp-map-card">
                 <header><div><span>Deine Karte</span><strong><?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?></strong></div><b>Verteidigen</b></header>
                 <div class="mp-map-canvas-stage"><canvas class="mp-game-canvas" id="multiplayer-player-canvas" width="960" height="720" tabindex="0" aria-label="Deine Karte <?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?>. Türme platzieren oder zwei gleichstufige Türme nacheinander zum Verschmelzen anklicken."></canvas><div class="mp-canvas-status" id="multiplayer-canvas-status">Spielgrafiken werden geladen …</div><div class="mp-map-tip" id="multiplayer-map-tip"><b>1</b><span>Vor Runde 1 drei kostenlose Türme auf Bauflächen platzieren.</span></div></div>
+                <p class="mp-tower-help">Neuen Turm wählen und auf einen gleichen Stufe-1-Turm klicken, um zu verschmelzen. Platzierte Türme gleicher Stufe lassen sich auch aufeinanderziehen.</p>
+                <p class="mp-tower-feedback" id="multiplayer-tower-feedback" role="status" aria-live="polite">Vor dem Spielstart drei kostenlose Türme platzieren.</p>
+                <div class="mp-tower-actions" id="multiplayer-tower-actions" hidden>
+                    <strong id="multiplayer-selected-tower-label" aria-live="polite"></strong>
+                    <button id="multiplayer-remove-tower" type="button">Turm entfernen</button>
+                </div>
                 <footer><div><span>Deine Lebenspunkte</span><strong id="your-hp"><?= (int) $gameState['you']['hp'] ?> / 99</strong></div><div class="mp-health" id="your-health" role="progressbar" aria-label="Deine Lebenspunkte" aria-valuemin="0" aria-valuemax="99" aria-valuenow="<?= (int) $gameState['you']['hp'] ?>"><i style="width: <?= min(100, max(0, (int) $gameState['you']['hp'] / 99 * 100)) ?>%"></i></div></footer>
             </article>
             <article class="mp-map-card mp-map-card--opponent">
@@ -116,6 +122,13 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
                 <p class="mp-local-status" id="multiplayer-local-status" role="status" aria-live="polite">Online-Synchronisierung aktiv. Beide Spieler geben jede Runde gemeinsam frei.</p>
             </div>
         </section>
+        <dialog class="mp-remove-dialog" id="multiplayer-remove-dialog" aria-labelledby="multiplayer-remove-question">
+            <p id="multiplayer-remove-question">Möchten Sie diesen Turm wirklich entfernen?</p>
+            <div>
+                <button id="multiplayer-cancel-remove" type="button" autofocus>Abbrechen</button>
+                <button id="multiplayer-confirm-remove" type="button">Ja, entfernen</button>
+            </div>
+        </dialog>
         <section class="mp-result-modal" id="multiplayer-result-modal" role="dialog" aria-modal="true" aria-labelledby="multiplayer-result-title" hidden>
             <div class="mp-result-card">
                 <div class="mp-result-icon" id="multiplayer-result-icon" aria-hidden="true">★</div>
@@ -136,6 +149,6 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
         </section>
     </main>
     <script src="multiplayer-room.js?v=multiplayer-final-1"></script>
-    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-controls-2"></script>
+    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-controls-3"></script>
 </body>
 </html>

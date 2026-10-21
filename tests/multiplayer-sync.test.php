@@ -161,3 +161,17 @@ try {
     $invalidMove = true;
 }
 sync_check($invalidMove, 'The server rejects moving onto another tower');
+multiplayer_record_action($pdo, 5, 1, 'remove', 'upgrade-remove-001', ['source' => 1]);
+sync_check(count(multiplayer_tower_layout($pdo, 5, 1)) === 2
+    && multiplayer_tower_layout($pdo, 5, 1)[1]['type'] === 'lens',
+    'The server replays removal and shifts later tower indices');
+$invalidRemove = false;
+try {
+    multiplayer_record_action($pdo, 5, 1, 'remove', 'upgrade-remove-002', ['source' => 2]);
+} catch (InvalidArgumentException) {
+    $invalidRemove = true;
+}
+sync_check($invalidRemove, 'The server rejects removing a tower that no longer exists');
+multiplayer_record_action($pdo, 5, 1, 'build', 'upgrade-build-0006', ['tower' => 'fan', 'x' => 150, 'y' => 30]);
+sync_check(multiplayer_tower_layout($pdo, 5, 1)[2]['type'] === 'fan',
+    'Removing a tower frees its former build position');
