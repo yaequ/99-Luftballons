@@ -81,7 +81,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
         <section class="mp-map-grid" aria-label="Spielfelder">
             <article class="mp-map-card">
                 <header><div><span>Deine Karte</span><strong><?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?></strong></div><b>Verteidigen</b></header>
-                <div class="mp-map-canvas-stage"><canvas class="mp-game-canvas" id="multiplayer-player-canvas" width="960" height="720" tabindex="0" aria-label="Deine Karte <?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?>. Nach der Turmauswahl mit Maus oder Pfeiltasten platzieren."></canvas><div class="mp-canvas-status" id="multiplayer-canvas-status">Spielgrafiken werden geladen …</div><div class="mp-map-tip" id="multiplayer-map-tip"><b>1</b><span>Turm auswählen und auf einer dunklen Baufläche platzieren.</span></div></div>
+                <div class="mp-map-canvas-stage"><canvas class="mp-game-canvas" id="multiplayer-player-canvas" width="960" height="720" tabindex="0" aria-label="Deine Karte <?= htmlspecialchars($playerMap['name'], ENT_QUOTES, 'UTF-8') ?>. Türme platzieren oder zwei gleichstufige Türme nacheinander zum Verschmelzen anklicken."></canvas><div class="mp-canvas-status" id="multiplayer-canvas-status">Spielgrafiken werden geladen …</div><div class="mp-map-tip" id="multiplayer-map-tip"><b>1</b><span>Vor Runde 1 drei kostenlose Türme auf Bauflächen platzieren.</span></div></div>
                 <footer><div><span>Deine Lebenspunkte</span><strong id="your-hp"><?= (int) $gameState['you']['hp'] ?> / 99</strong></div><div class="mp-health" id="your-health" role="progressbar" aria-label="Deine Lebenspunkte" aria-valuemin="0" aria-valuemax="99" aria-valuenow="<?= (int) $gameState['you']['hp'] ?>"><i style="width: <?= min(100, max(0, (int) $gameState['you']['hp'] / 99 * 100)) ?>%"></i></div></footer>
             </article>
             <article class="mp-map-card mp-map-card--opponent">
@@ -95,18 +95,18 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
             <div class="mp-tower-panel">
                 <div class="mp-control-heading"><div><span class="mp-kicker">Online · Verteidigung</span><h1 id="online-actions-title">Turm auswählen</h1></div><p>Wird live mit deinem Gegner synchronisiert</p></div>
                 <div class="mp-tower-grid">
-                    <button class="mp-tower-card" data-tower="cactus" type="button" aria-pressed="false"><canvas data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span><strong>Kaktus</strong><small>Schneller Schaden</small><em><img src="assets/img/goldnugget.png" alt="">25</em></span></button>
-                    <button class="mp-tower-card" data-tower="fan" type="button" aria-pressed="false"><canvas data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span><strong>Gebläse</strong><small>Kurze Abklingzeit</small><em><img src="assets/img/goldnugget.png" alt="">45</em></span></button>
-                    <button class="mp-tower-card" data-tower="lens" type="button" aria-pressed="false"><canvas data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span><strong>Lupe</strong><small>Hoher Schaden</small><em><img src="assets/img/goldnugget.png" alt="">70</em></span></button>
+                    <button class="mp-tower-card" data-tower="cactus" type="button" aria-pressed="false"><canvas data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span><strong>Kaktus</strong><small>Schneller Schaden</small><em><img src="assets/img/goldnugget.png" alt="">50</em></span></button>
+                    <button class="mp-tower-card" data-tower="fan" type="button" aria-pressed="false"><canvas data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span><strong>Gebläse</strong><small>Kurze Abklingzeit</small><em><img src="assets/img/goldnugget.png" alt="">90</em></span></button>
+                    <button class="mp-tower-card" data-tower="lens" type="button" aria-pressed="false"><canvas data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span><strong>Lupe</strong><small>Hoher Schaden</small><em><img src="assets/img/goldnugget.png" alt="">150</em></span></button>
                 </div>
             </div>
             <div class="mp-attack-panel">
-                <div class="mp-control-heading"><div><span class="mp-kicker">Online · Angriff</span><h2>Ballons senden</h2></div><p>Erreichen direkt die Karte deines Gegners</p></div>
+                <div class="mp-control-heading"><div><span class="mp-kicker">Online · Angriff</span><h2>Ballons senden</h2></div><p>Ballonpakete werden im Rundenverlauf freigeschaltet</p></div>
                 <div class="mp-balloon-grid">
-                    <button class="mp-balloon-card" data-balloon="red" type="button"><canvas data-balloon-portrait="red" width="64" height="64" aria-hidden="true"></canvas><span><strong>Rot</strong><small>10 Ballons</small><em><img src="assets/img/goldnugget.png" alt="">10 <b>+1/s</b></em></span></button>
-                    <button class="mp-balloon-card" data-balloon="blue" type="button"><canvas data-balloon-portrait="blue" width="64" height="64" aria-hidden="true"></canvas><span><strong>Blau</strong><small>10 Ballons</small><em><img src="assets/img/goldnugget.png" alt="">25 <b>+2/s</b></em></span></button>
-                    <button class="mp-balloon-card" data-balloon="green" type="button"><canvas data-balloon-portrait="green" width="64" height="64" aria-hidden="true"></canvas><span><strong>Grün</strong><small>10 Ballons</small><em><img src="assets/img/goldnugget.png" alt="">45 <b>+4/s</b></em></span></button>
-                    <button class="mp-balloon-card" data-balloon="yellow" type="button"><canvas data-balloon-portrait="yellow" width="64" height="64" aria-hidden="true"></canvas><span><strong>Gelb</strong><small>10 Ballons</small><em><img src="assets/img/goldnugget.png" alt="">70 <b>+7/s</b></em></span></button>
+                    <button class="mp-balloon-card" data-balloon="red" type="button"><canvas data-balloon-portrait="red" width="64" height="64" aria-hidden="true"></canvas><span><strong>Rot</strong><small>Ab Runde 1</small><em><img src="assets/img/goldnugget.png" alt="">25 <b>+0,1/s</b></em></span></button>
+                    <button class="mp-balloon-card" data-balloon="blue" type="button"><canvas data-balloon-portrait="blue" width="64" height="64" aria-hidden="true"></canvas><span><strong>Blau</strong><small>Ab Runde 5</small><em><img src="assets/img/goldnugget.png" alt="">50 <b>+0,2/s</b></em></span></button>
+                    <button class="mp-balloon-card" data-balloon="green" type="button"><canvas data-balloon-portrait="green" width="64" height="64" aria-hidden="true"></canvas><span><strong>Grün</strong><small>Ab Runde 10</small><em><img src="assets/img/goldnugget.png" alt="">90 <b>+0,3/s</b></em></span></button>
+                    <button class="mp-balloon-card" data-balloon="yellow" type="button"><canvas data-balloon-portrait="yellow" width="64" height="64" aria-hidden="true"></canvas><span><strong>Gelb</strong><small>Ab Runde 15</small><em><img src="assets/img/goldnugget.png" alt="">140 <b>+0,5/s</b></em></span></button>
                 </div>
                 <div class="mp-local-round-controls">
                     <label><input id="multiplayer-auto-start" type="checkbox" checked> Auto-Start</label>
@@ -136,6 +136,6 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
         </section>
     </main>
     <script src="multiplayer-room.js?v=multiplayer-final-1"></script>
-    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-tip-1"></script>
+    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-upgrades-1"></script>
 </body>
 </html>

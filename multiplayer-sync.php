@@ -170,6 +170,29 @@ function multiplayer_build_zones(int $side): array
     ], $zones);
 }
 
+function multiplayer_tower_layout(PDO $pdo, int $matchId, int $side): array
+{
+    $query = $pdo->prepare("SELECT event_type, payload FROM multiplayer_game_events WHERE match_id = ? AND actor_side = ? AND event_type IN ('build', 'merge') ORDER BY id");
+    $query->execute([$matchId, $side]);
+    $towers = [];
+    foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $event) {
+        $payload = json_decode((string) $event['payload'], true);
+        if (!is_array($payload)) continue;
+        if ($event['event_type'] === 'build') {
+            $towers[] = ['type' => (string) ($payload['tower'] ?? ''), 'x' => (float) ($payload['x'] ?? 0),
+                'y' => (float) ($payload['y'] ?? 0), 'level' => 1];
+            continue;
+        }
+        $target = (int) ($payload['target'] ?? -1);
+        $source = (int) ($payload['source'] ?? -1);
+        if (!isset($towers[$target])) continue;
+        if (empty($payload['purchased']) && !isset($towers[$source])) continue;
+        $towers[$target]['level']++;
+        if (empty($payload['purchased'])) array_splice($towers, $source, 1);
+    }
+    return $towers;
+}
+
 function multiplayer_validate_build(PDO $pdo, int $matchId, int $side, string $tower, float $x, float $y): void
 {
     if (!in_array($tower, ['cactus', 'fan', 'lens'], true)) throw new InvalidArgumentException('Unbekannter Turm.');
@@ -182,13 +205,25 @@ function multiplayer_validate_build(PDO $pdo, int $matchId, int $side, string $t
     }
     if (!$inside) throw new InvalidArgumentException('Dieser Punkt liegt nicht auf einer Baufläche.');
 
-    $query = $pdo->prepare("SELECT payload FROM multiplayer_game_events WHERE match_id = ? AND actor_side = ? AND event_type = 'build'");
-    $query->execute([$matchId, $side]);
-    foreach ($query->fetchAll(PDO::FETCH_COLUMN) as $payloadJson) {
-        $payload = json_decode((string) $payloadJson, true);
-        if (is_array($payload) && hypot((float) ($payload['x'] ?? 0) - $x, (float) ($payload['y'] ?? 0) - $y) < 12) {
+    foreach (multiplayer_tower_layout($pdo, $matchId, $side) as $existing) {
+        if (hypot($existing['x'] - $x, $existing['y'] - $y) < 12) {
             throw new InvalidArgumentException('Dieser Bauplatz ist bereits belegt.');
         }
+    }
+}
+
+function multiplayer_validate_merge(PDO $pdo, int $matchId, int $side, int $source, int $target, bool $purchased): void
+{
+    $towers = multiplayer_tower_layout($pdo, $matchId, $side);
+    if (!isset($towers[$target]) || $towers[$target]['level'] >= 3) {
+        throw new InvalidArgumentException('Dieser Turm kann nicht weiter verbessert werden.');
+    }
+    if ($purchased) {
+        if ($towers[$target]['level'] !== 1) throw new InvalidArgumentException('Nur Stufe-1-Türme lassen sich direkt durch Kauf verbessern.');
+    } elseif (!isset($towers[$source]) || $source === $target
+        || $towers[$source]['type'] !== $towers[$target]['type']
+        || $towers[$source]['level'] !== $towers[$target]['level']) {
+        throw new InvalidArgumentException('Diese Türme lassen sich nicht verschmelzen.');
     }
 }
 
@@ -238,6 +273,16 @@ function multiplayer_record_action(PDO $pdo, int $matchId, int $userId, string $
             $balloon = is_string($input['balloon'] ?? null) ? $input['balloon'] : '';
             if (!in_array($balloon, ['red', 'blue', 'green', 'yellow'], true)) throw new InvalidArgumentException('Unbekannte Ballonart.');
             multiplayer_insert_event($pdo, $matchId, $side, 'send', $actionId, ['balloon' => $balloon]);
+        } elseif ($action === 'merge') {
+            $target = filter_var($input['target'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 99]]);
+            $purchased = ($input['purchased'] ?? '0') === '1';
+            $source = $purchased ? 0 : filter_var($input['source'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 99]]);
+            if ($target === false || $source === false || (!$purchased && $source === $target)) {
+                throw new InvalidArgumentException('Ungültige Turmverschmelzung.');
+            }
+            multiplayer_validate_merge($pdo, $matchId, $side, $source, $target, $purchased);
+            multiplayer_insert_event($pdo, $matchId, $side, 'merge', $actionId,
+                ['source' => $source, 'target' => $target, 'purchased' => $purchased]);
         } elseif ($action === 'pause') {
             $paused = filter_var($input['paused'] ?? null, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             if ($paused === null) throw new InvalidArgumentException('Ungültiger Pausenstatus.');
@@ -321,6 +366,8 @@ function multiplayer_validate_snapshot(array $snapshot): void
         }
         foreach ($towers as $tower) {
             if (!is_array($tower) || !in_array($tower['type'] ?? null, ['cactus', 'fan', 'lens'], true)) throw new InvalidArgumentException('Ungültiger Turm im Snapshot.');
+            $level = filter_var($tower['level'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 3]]);
+            if ($level === false) throw new InvalidArgumentException('Ungültige Turmstufe im Snapshot.');
             $x = filter_var($tower['x'] ?? null, FILTER_VALIDATE_FLOAT); $y = filter_var($tower['y'] ?? null, FILTER_VALIDATE_FLOAT);
             if ($x === false || $y === false || $x < 0 || $x > 320 || $y < 0 || $y > 240) throw new InvalidArgumentException('Ungültige Turmposition im Snapshot.');
             $inside = false;

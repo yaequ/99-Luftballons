@@ -1,6 +1,10 @@
-import { CONFIG } from '../game/modules/config.js';
-import { createSide } from '../game/modules/state.js';
-import { mapPathPoint, canBuildAt } from '../game/modules/building.js';
+import { CONFIG } from '../game/modules/ai-config.js';
+import { createSide } from '../game/modules/ai-state.js';
+import { mapPathPoint, canBuildAt } from '../game/modules/ai-building.js';
+import { createTower, mergeTowers, canMergeTowers, towerDamage } from '../game/modules/towers.js';
+import { sendBatchSize, isSendUnlocked } from '../game/modules/sending.js';
+import { grantRoundGold } from '../game/modules/economy.js';
+import { updateMergeEffect } from '../game/modules/merge-effects.js';
 import { ROUND_DEFINITIONS, shuffledSpawnGroups } from '../game/rounds.js';
 
 function seededRandom(seed) {
@@ -24,7 +28,8 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
     active: false, paused: false, result: null, secondsElapsed: 0, economyClock: 0,
     selectedTowerType: null, buildCursor: { x: 100, y: 40, active: false },
     currentRound: 0, roundStatus: 'ready', remainingEnemies: 0, enemyRemainingEnemies: 0,
-    autoStart: false, player: createSide(playerMap), enemy: createSide(opponentMap),
+    autoStart: false, player: { ...createSide(playerMap), freeBuildsRemaining: CONFIG.STARTER_TOWERS },
+    enemy: { ...createSide(opponentMap), freeBuildsRemaining: CONFIG.STARTER_TOWERS },
     waves: { player: createWave(), enemy: createWave() }
   };
   const notify = () => callbacks.onChange?.(state);
@@ -35,15 +40,32 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
     const side = sideFor(owner);
     const tower = CONFIG.TOWERS[type];
     if (!tower) return 'unknown';
-    const result = canBuildAt(side, type, x, y, force);
+    const free = side.freeBuildsRemaining > 0 && state.currentRound === 0;
+    const result = canBuildAt(side, type, x, y, free || force);
     if (result !== true) return result;
-    side.gold -= tower.cost;
-    side.towers.push({ x, y, type, range: tower.range, damage: tower.damage, fireRate: tower.fireRate, cooldown: 0, color: tower.color, frameIndex: 0 });
+    if (free) side.freeBuildsRemaining -= 1;
+    else side.gold -= tower.cost;
+    side.towers.push(createTower(type, x, y));
     notify();
     return true;
   }
 
   function buildTower(type, x, y) { return buildTowerFor('player', type, x, y); }
+
+  function mergeTowerFor(owner, sourceIndex, targetIndex, purchased = false) {
+    if (state.result) return 'finished';
+    const side = sideFor(owner);
+    const target = side.towers[targetIndex];
+    const source = purchased && target ? createTower(target.type, target.x, target.y) : side.towers[sourceIndex];
+    if (!target || !source || !canMergeTowers(source, target)) return 'incompatible';
+    const outcome = mergeTowers(side, source, target, purchased);
+    if (outcome.result === 'merge') notify();
+    return outcome.result === 'merge' ? true : outcome.result;
+  }
+
+  function mergeTower(sourceIndex, targetIndex, purchased = false) {
+    return mergeTowerFor('player', sourceIndex, targetIndex, purchased);
+  }
 
   function spawnBalloon(targetSide, type, fromRound = false, random = Math.random) {
     const balloon = CONFIG.BALLOONS[type];
@@ -60,9 +82,20 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
     const target = owner === 'enemy' ? state.player : state.enemy;
     const balloon = CONFIG.BALLOONS[type];
     if (!balloon || !Number.isFinite(balloon.cost)) return 'unknown';
+    if (!isSendUnlocked(type, state.currentRound)) return 'locked';
     if (!force && sender.gold < balloon.cost) return 'gold';
-    sender.gold -= balloon.cost; sender.income += balloon.income;
-    target.sendQueue.push({ type, remaining: CONFIG.SEND_BATCH_SIZE });
+    if (sender.sendIncomeRound !== state.currentRound) {
+      sender.sendIncomeRound = state.currentRound;
+      sender.sendIncomeThisRound = 0;
+    }
+    const bonus = Math.round(Math.max(0, Math.min(balloon.income,
+      CONFIG.SEND_INCOME.perRound - sender.sendIncomeThisRound,
+      CONFIG.SEND_INCOME.total - sender.sendIncomeTotal)) * 100) / 100;
+    sender.gold -= balloon.cost;
+    sender.income = Math.round((sender.income + bonus) * 100) / 100;
+    sender.sendIncomeThisRound = Math.round((sender.sendIncomeThisRound + bonus) * 100) / 100;
+    sender.sendIncomeTotal = Math.round((sender.sendIncomeTotal + bonus) * 100) / 100;
+    target.sendQueue.push({ type, remaining: sendBatchSize(state.currentRound, type) });
     updateSentBalloons(target, 0); notify(); return true;
   }
 
@@ -79,6 +112,9 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
   function startRound(seed = Date.now()) {
     if (state.paused || state.result || ['spawning', 'clearing'].includes(state.roundStatus) || state.currentRound >= CONFIG.WAVES) return false;
     state.active = true; state.currentRound += 1;
+    state.player.freeBuildsRemaining = 0;
+    state.enemy.freeBuildsRemaining = 0;
+    grantRoundGold(state);
     const definition = ROUND_DEFINITIONS[state.currentRound - 1];
     prepareWave('player', definition, seededRandom((Number(seed) || 1) + ownSide));
     prepareWave('enemy', definition, seededRandom((Number(seed) || 1) + (ownSide === 1 ? 2 : 1)));
@@ -157,6 +193,7 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
       else { balloon.x += (dx / distance) * travel; balloon.y += (dy / distance) * travel; }
     }
     side.towers.forEach((tower) => {
+      updateMergeEffect(tower, deltaTime);
       tower.cooldown = Math.max(0, tower.cooldown - deltaTime);
       const target = side.balloons.find((balloon) => Math.hypot(balloon.x - tower.x, balloon.y - tower.y) <= tower.range);
       if (!target) return; updateTowerDirection(tower, target); if (tower.cooldown > 0) return;
@@ -195,7 +232,10 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
   function serializeSide(side) {
     return {
       hp: side.hp, gold: side.gold, income: side.income, sendClock: side.sendClock,
-      towers: side.towers.map(({ x, y, type, cooldown, frameIndex }) => ({ x, y, type, cooldown, frameIndex })),
+      freeBuildsRemaining: side.freeBuildsRemaining, sendIncomeTotal: side.sendIncomeTotal,
+      sendIncomeRound: side.sendIncomeRound, sendIncomeThisRound: side.sendIncomeThisRound,
+      lastGoldBonusRound: side.lastGoldBonusRound,
+      towers: side.towers.map(({ x, y, type, level, cooldown, frameIndex }) => ({ x, y, type, level, cooldown, frameIndex })),
       balloons: side.balloons.map(({ type, x, y, pathRouteIndex, pathIndex, hp, fromRound }) => ({ type, x, y, pathRouteIndex: pathRouteIndex || 0, pathIndex, hp, fromRound })),
       sendQueue: side.sendQueue.map(({ type, remaining }) => ({ type, remaining }))
     };
@@ -223,11 +263,20 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
     target.hp = Math.max(0, Math.min(99, finite(saved.hp, 99)));
     target.gold = Math.max(-1000, finite(saved.gold, 100));
     target.income = Math.max(0, finite(saved.income, 5));
+    target.freeBuildsRemaining = Math.max(0, Math.min(CONFIG.STARTER_TOWERS, Math.floor(finite(saved.freeBuildsRemaining, 0))));
+    target.sendIncomeTotal = Math.max(0, Math.min(CONFIG.SEND_INCOME.total, finite(saved.sendIncomeTotal)));
+    target.sendIncomeRound = Math.max(0, Math.floor(finite(saved.sendIncomeRound)));
+    target.sendIncomeThisRound = Math.max(0, Math.min(CONFIG.SEND_INCOME.perRound, finite(saved.sendIncomeThisRound)));
+    target.lastGoldBonusRound = Math.max(0, Math.floor(finite(saved.lastGoldBonusRound)));
     target.sendClock = Math.max(0, finite(saved.sendClock));
     target.towers = (Array.isArray(saved.towers) ? saved.towers : []).flatMap((item) => {
       const tower = CONFIG.TOWERS[item?.type];
       if (!tower) return [];
-      return [{ x: finite(item.x), y: finite(item.y), type: item.type, range: tower.range, damage: tower.damage, fireRate: tower.fireRate, cooldown: Math.max(0, finite(item.cooldown)), color: tower.color, frameIndex: Math.max(0, Math.floor(finite(item.frameIndex))) }];
+      const level = Math.max(1, Math.min(CONFIG.TOWER_LEVEL_MULTIPLIERS.length, Math.floor(finite(item.level, 1))));
+      return [{ x: finite(item.x), y: finite(item.y), type: item.type, level, range: tower.range,
+        damage: towerDamage(item.type, level), fireRate: tower.fireRate,
+        cooldown: Math.max(0, finite(item.cooldown)), color: tower.color,
+        frameIndex: Math.max(0, Math.floor(finite(item.frameIndex))) }];
     });
     target.balloons = (Array.isArray(saved.balloons) ? saved.balloons : []).flatMap((item) => {
       const balloon = CONFIG.BALLOONS[item?.type];
@@ -236,7 +285,7 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
       const path = target.map.paths[routeIndex].map((point) => mapPathPoint(target.map, point));
       return [{ type: item.type, x: finite(item.x, path[0].x), y: finite(item.y, path[0].y), path, pathRouteIndex: routeIndex, pathIndex: Math.max(0, Math.min(path.length - 1, Math.floor(finite(item.pathIndex)))), hp: Math.max(0.01, finite(item.hp, balloon.hp)), maxHp: balloon.hp, speed: balloon.speed, lifeDamage: balloon.lifeDamage, renderSize: balloon.renderSize, fromRound: Boolean(item.fromRound) }];
     });
-    target.sendQueue = (Array.isArray(saved.sendQueue) ? saved.sendQueue : []).flatMap((item) => CONFIG.BALLOONS[item?.type] ? [{ type: item.type, remaining: Math.max(0, Math.min(CONFIG.SEND_BATCH_SIZE, Math.floor(finite(item.remaining)))) }] : []);
+    target.sendQueue = (Array.isArray(saved.sendQueue) ? saved.sendQueue : []).flatMap((item) => CONFIG.BALLOONS[item?.type] ? [{ type: item.type, remaining: Math.max(0, Math.min(CONFIG.SEND_BATCH.maximum, Math.floor(finite(item.remaining)))) }] : []);
     target.projectiles = []; target.pops = [];
   }
 
@@ -264,7 +313,8 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
     notify(); return true;
   }
 
-  return { state, buildTower, buildTowerFor, sendBalloon, sendBalloonFor, startRound, update, setPaused, exportSnapshot, restoreSnapshot };
+  return { state, buildTower, buildTowerFor, mergeTower, mergeTowerFor,
+    sendBalloon, sendBalloonFor, startRound, update, setPaused, exportSnapshot, restoreSnapshot };
 }
 
 export { createMultiplayerEngine };

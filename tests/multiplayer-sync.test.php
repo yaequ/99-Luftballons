@@ -127,3 +127,24 @@ try {
     $rateRejected = true;
 }
 sync_check($rateRejected, 'Server-side rate limiting blocks automated action flooding');
+
+$pdo->exec("INSERT INTO multiplayer_matches (id, player_one_id, player_two_id, status) VALUES (5, 1, 2, 'active')");
+ensure_multiplayer_match_state($pdo, 5);
+multiplayer_record_action($pdo, 5, 1, 'build', 'upgrade-build-0001', ['tower' => 'cactus', 'x' => 110, 'y' => 30]);
+multiplayer_record_action($pdo, 5, 1, 'build', 'upgrade-build-0002', ['tower' => 'cactus', 'x' => 130, 'y' => 30]);
+multiplayer_record_action($pdo, 5, 1, 'build', 'upgrade-build-0003', ['tower' => 'cactus', 'x' => 150, 'y' => 30]);
+multiplayer_record_action($pdo, 5, 1, 'merge', 'upgrade-merge-0001', ['source' => 1, 'target' => 0]);
+sync_check(count(multiplayer_tower_layout($pdo, 5, 1)) === 2 && multiplayer_tower_layout($pdo, 5, 1)[0]['level'] === 2,
+    'The server replays a level-2 merge and removes its source tower');
+multiplayer_record_action($pdo, 5, 1, 'build', 'upgrade-build-0004', ['tower' => 'fan', 'x' => 130, 'y' => 30]);
+sync_check(multiplayer_tower_layout($pdo, 5, 1)[2]['type'] === 'fan', 'A freed build position can be reused');
+multiplayer_record_action($pdo, 5, 1, 'merge', 'upgrade-merge-0002', ['target' => 1, 'purchased' => '1']);
+multiplayer_record_action($pdo, 5, 1, 'merge', 'upgrade-merge-0003', ['source' => 1, 'target' => 0]);
+sync_check(multiplayer_tower_layout($pdo, 5, 1)[0]['level'] === 3, 'A second level-2 tower can merge into a level-3 tower');
+$invalidMerge = false;
+try {
+    multiplayer_record_action($pdo, 5, 1, 'merge', 'upgrade-merge-0004', ['target' => 0, 'purchased' => '1']);
+} catch (InvalidArgumentException) {
+    $invalidMerge = true;
+}
+sync_check($invalidMerge, 'The server rejects an incompatible upgrade');

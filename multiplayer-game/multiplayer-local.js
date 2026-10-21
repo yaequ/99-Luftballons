@@ -1,9 +1,11 @@
-import { CONFIG } from '../game/modules/config.js';
-import { ASSETS, whenImageReady } from '../game/modules/assets.js';
+import { CONFIG } from '../game/modules/ai-config.js';
+import { ASSETS, whenImageReady } from '../game/modules/ai-assets.js';
 import { MAP_DATA } from '../game/modules/maps.js';
-import { createRenderer } from '../game/modules/renderer.js';
-import { canBuildAt } from '../game/modules/building.js';
-import { createMultiplayerEngine } from './engine.js?v=multiplayer-snapshot-1';
+import { createRenderer } from '../game/modules/ai-renderer.js';
+import { canBuildAt } from '../game/modules/ai-building.js';
+import { towerAtPoint, canMergeTowers } from '../game/modules/towers.js';
+import { sendBatchSize, isSendUnlocked } from '../game/modules/sending.js';
+import { createMultiplayerEngine } from './engine.js?v=multiplayer-upgrades-1';
 
 const shell = document.querySelector('.multiplayer-match-shell[data-local-engine="true"]');
 if (!shell) throw new Error('Multiplayer canvas shell not found.');
@@ -49,6 +51,8 @@ let snapshotTimer = 0;
 let snapshotRestored = false;
 let resultReported = false;
 let resultDisplayed = false;
+let selectedMergeSource = null;
+let mergeDragStart = null;
 
 const engine = createMultiplayerEngine(playerMap, opponentMap, {
   ownSide,
@@ -64,7 +68,17 @@ const engine = createMultiplayerEngine(playerMap, opponentMap, {
   }
 });
 const state = engine.state;
-const { renderSide, renderTowerPortraits, renderBalloonPortraits } = createRenderer(() => state, mousePosition);
+const { renderSide, renderTowerPortraits, renderBalloonPortraits } = createRenderer(() => state, mousePosition, () => {
+  const type = state.selectedTowerType;
+  const point = mousePosition.onCanvas ? mousePosition : state.buildCursor.active ? state.buildCursor : null;
+  if (!type || !point) return {};
+  const target = towerAtPoint(state.player, point.x, point.y);
+  const result = target
+    ? (canMergeTowers({ type, level: 1 }, target) && state.player.gold >= CONFIG.TOWERS[type].cost ? 'merge' : 'incompatible')
+    : (canBuildAt(state.player, type, point.x, point.y,
+      state.player.freeBuildsRemaining > 0 && state.currentRound === 0) === true ? 'build' : 'zone');
+  return { placement: { type, x: point.x, y: point.y, target, result } };
+});
 let lastFrameTime = performance.now();
 let accumulator = 0;
 
@@ -79,7 +93,10 @@ function prefixAsset(image) {
 }
 
 function requiredAssets() {
-  const images = [state.player.map.image, state.enemy.map.image, ...Object.values(ASSETS.characters).flat(), ...Object.values(ASSETS.balloons).flat(), ASSETS.boss];
+  const images = [state.player.map.image, state.enemy.map.image, ...Object.values(ASSETS.characters).flat(),
+    ...Object.values(ASSETS.characterUpgrades).flatMap((frames) => Object.values(frames)),
+    ...Object.values(ASSETS.characterLevel3).flatMap((frames) => Object.values(frames)),
+    ...Object.values(ASSETS.balloons).flat(), ASSETS.boss];
   [...new Set(images)].forEach(prefixAsset);
   return [...new Set(images)];
 }
@@ -102,9 +119,9 @@ function roundButtonLabel() {
 
 function updateInterface() {
   document.getElementById('your-gold').textContent = String(Math.floor(state.player.gold));
-  document.getElementById('your-income').textContent = `+${state.player.income} Gold/s`;
+  document.getElementById('your-income').textContent = `+${state.player.income.toLocaleString('de-DE', { maximumFractionDigits: 2 })} Gold/s`;
   document.getElementById('opponent-gold').textContent = String(Math.floor(state.enemy.gold));
-  document.getElementById('opponent-income').textContent = `+${state.enemy.income} Gold/s`;
+  document.getElementById('opponent-income').textContent = `+${state.enemy.income.toLocaleString('de-DE', { maximumFractionDigits: 2 })} Gold/s`;
   document.getElementById('match-round').textContent = `${state.currentRound}/${CONFIG.WAVES}`;
   document.getElementById('multiplayer-round-state').textContent = !online ? 'Verbindung wird wiederhergestellt …'
     : state.paused ? 'Online-Match pausiert'
@@ -114,9 +131,18 @@ function updateInterface() {
   towerButtons.forEach((button) => {
     const selected = button.dataset.tower === state.selectedTowerType;
     button.classList.toggle('is-selected', selected); button.setAttribute('aria-pressed', String(selected));
-    button.disabled = !assetsReady || !online || Boolean(state.result) || state.player.gold < CONFIG.TOWERS[button.dataset.tower].cost;
+    button.disabled = !assetsReady || !online || Boolean(state.result)
+      || (state.player.freeBuildsRemaining === 0 && state.player.gold < CONFIG.TOWERS[button.dataset.tower].cost);
   });
-  balloonButtons.forEach((button) => { button.disabled = !assetsReady || !online || !state.active || state.paused || Boolean(state.result) || state.player.gold < CONFIG.BALLOONS[button.dataset.balloon].cost; });
+  balloonButtons.forEach((button) => {
+    const type = button.dataset.balloon;
+    const balloon = CONFIG.BALLOONS[type];
+    const unlocked = isSendUnlocked(type, state.currentRound);
+    button.disabled = !assetsReady || !online || !state.active || state.paused || Boolean(state.result)
+      || !unlocked || state.player.gold < balloon.cost;
+    button.querySelector('small').textContent = unlocked
+      ? `${sendBatchSize(state.currentRound, type)} Ballons` : `Ab Runde ${balloon.unlockRound}`;
+  });
   startRoundButton.disabled = !assetsReady || !online || state.paused || Boolean(state.result) || ['spawning', 'clearing'].includes(state.roundStatus) || readyState.you || state.currentRound >= CONFIG.WAVES;
   startRoundButton.textContent = roundButtonLabel();
   pauseButton.disabled = !online || !state.active || Boolean(state.result);
@@ -148,15 +174,21 @@ function setTip(step, text) { mapTip.querySelector('b').textContent = String(ste
 
 function selectTower(type) {
   if (!assetsReady || state.result) return;
+  selectedMergeSource = null;
   state.selectedTowerType = state.selectedTowerType === type ? null : type;
   state.buildCursor.active = Boolean(state.selectedTowerType); updateInterface();
-  if (state.selectedTowerType) { setTip(2, `${CONFIG.TOWERS[type].name} auf einer dunklen Baufläche platzieren.`); playerCanvas.focus(); }
+  if (state.selectedTowerType) {
+    setTip(2, `${CONFIG.TOWERS[type].name} auf einer Baufläche platzieren oder auf einen Stufe-1-Turm derselben Art setzen.`);
+    playerCanvas.focus();
+  }
   else setTip(1, 'Turm auswählen und auf einer dunklen Baufläche platzieren.');
 }
 
 function clearSelection() {
   state.selectedTowerType = null; state.buildCursor.active = false; updateInterface();
-  setTip(1, 'Turm auswählen und auf einer dunklen Baufläche platzieren.');
+  setTip(1, state.currentRound === 0 && state.player.freeBuildsRemaining > 0
+    ? `Noch ${state.player.freeBuildsRemaining} kostenlose Türme platzieren.`
+    : 'Turm wählen oder zwei gleichstufige Türme nacheinander zum Verschmelzen anklicken.');
 }
 
 function placementMessage(result, type) {
@@ -170,6 +202,7 @@ function applyEvent(event) {
   if (!event?.id || event.id <= lastEventId) return;
   const owner = Number(event.side) === ownSide ? 'player' : 'enemy';
   if (event.type === 'build') engine.buildTowerFor(owner, event.payload.tower, Number(event.payload.x), Number(event.payload.y), true);
+  else if (event.type === 'merge') engine.mergeTowerFor(owner, Number(event.payload.source), Number(event.payload.target), Boolean(event.payload.purchased));
   else if (event.type === 'send') engine.sendBalloonFor(owner, event.payload.balloon, true);
   else if (event.type === 'round_start') {
     readyState = { you: false, opponent: false };
@@ -259,8 +292,32 @@ async function leaveFinishedMatch(destination) {
 
 function placeTower(x = mousePosition.x, y = mousePosition.y) {
   const type = state.selectedTowerType;
-  if (!type || !assetsReady) return;
-  const localCheck = canBuildAt(state.player, type, x, y);
+  if (!assetsReady || !online || state.result) return;
+  const target = towerAtPoint(state.player, x, y);
+  if (!type) {
+    if (!target) { selectedMergeSource = null; return; }
+    const targetIndex = state.player.towers.indexOf(target);
+    if (selectedMergeSource === null) {
+      selectedMergeSource = targetIndex;
+      setTip(2, `${CONFIG.TOWERS[target.type].name} Stufe ${target.level} gewählt. Gleichstufigen Turm zum Verschmelzen anklicken.`);
+    } else {
+      const source = state.player.towers[selectedMergeSource];
+      if (source && canMergeTowers(source, target)) sendAction('merge', { source: String(selectedMergeSource), target: String(targetIndex) })
+        .then((data) => { if (data) { selectedMergeSource = null; clearSelection(); } });
+      else { selectedMergeSource = targetIndex; setTip(2, 'Diese Türme passen nicht zusammen. Anderen gleichstufigen Turm wählen.'); }
+    }
+    return;
+  }
+  if (target) {
+    if (!canMergeTowers({ type, level: 1 }, target)) {
+      setTip(2, 'Zum Aufwerten einen Turm derselben Art auf einen Stufe-1-Turm setzen.'); return;
+    }
+    if (state.player.gold < CONFIG.TOWERS[type].cost) { setTip(2, 'Nicht genug Gold für die Verschmelzung.'); return; }
+    sendAction('merge', { target: String(state.player.towers.indexOf(target)), purchased: '1' })
+      .then((data) => { if (data) clearSelection(); });
+    return;
+  }
+  const localCheck = canBuildAt(state.player, type, x, y, state.player.freeBuildsRemaining > 0 && state.currentRound === 0);
   if (localCheck !== true) { setTip(2, placementMessage(localCheck, type)); return; }
   sendAction('build', { tower: type, x: String(x), y: String(y) }).then((data) => {
     if (data) clearSelection();
@@ -289,7 +346,13 @@ function frame(now) {
 }
 
 towerButtons.forEach((button) => button.addEventListener('click', () => selectTower(button.dataset.tower)));
-balloonButtons.forEach((button) => button.addEventListener('click', () => sendAction('send', { balloon: button.dataset.balloon }).then((data) => { if (data) showStatus(`${button.querySelector('strong').textContent}: 10 Ballons wurden zum Gegner gesendet.`); })));
+balloonButtons.forEach((button) => button.addEventListener('click', () => {
+  const type = button.dataset.balloon;
+  if (button.disabled) return;
+  sendAction('send', { balloon: type }).then((data) => {
+    if (data) showStatus(`${button.querySelector('strong').textContent}: ${sendBatchSize(state.currentRound, type)} Ballons wurden zum Gegner gesendet.`);
+  });
+}));
 startRoundButton.addEventListener('click', requestRoundReady);
 pauseButton.addEventListener('click', () => sendAction('pause', { paused: state.paused ? '0' : '1' }));
 autoStartInput.addEventListener('change', updateInterface);
@@ -298,12 +361,24 @@ resultMenuButton.addEventListener('click', () => leaveFinishedMatch('game.php'))
 resultHistoryLink.addEventListener('click', (event) => { event.preventDefault(); leaveFinishedMatch(resultHistoryLink.href); });
 playerCanvas.addEventListener('pointermove', updatePointer);
 playerCanvas.addEventListener('pointerleave', () => { mousePosition.onCanvas = false; });
-playerCanvas.addEventListener('pointerdown', (event) => { event.preventDefault(); updatePointer(event); placeTower(); });
+playerCanvas.addEventListener('pointerdown', (event) => {
+  event.preventDefault(); updatePointer(event);
+  mergeDragStart = !state.selectedTowerType && towerAtPoint(state.player, mousePosition.x, mousePosition.y)
+    ? { x: mousePosition.x, y: mousePosition.y } : null;
+  placeTower();
+});
+playerCanvas.addEventListener('pointerup', (event) => {
+  if (!mergeDragStart) return;
+  updatePointer(event);
+  if (Math.hypot(mousePosition.x - mergeDragStart.x, mousePosition.y - mergeDragStart.y) >= CONFIG.GRID_SIZE) placeTower();
+  mergeDragStart = null;
+});
 playerCanvas.addEventListener('keydown', (event) => {
   if (!state.selectedTowerType) return;
   const movement = { ArrowLeft: [-CONFIG.GRID_SIZE, 0], ArrowRight: [CONFIG.GRID_SIZE, 0], ArrowUp: [0, -CONFIG.GRID_SIZE], ArrowDown: [0, CONFIG.GRID_SIZE] }[event.key];
   if (movement) {
-    event.preventDefault(); state.buildCursor.x = Math.max(4, Math.min(CONFIG.CANVAS_WIDTH - 4, state.buildCursor.x + movement[0])); state.buildCursor.y = Math.max(4, Math.min(CONFIG.CANVAS_HEIGHT - 4, state.buildCursor.y + movement[1])); state.buildCursor.active = true;
+    event.preventDefault(); mousePosition.onCanvas = false;
+    state.buildCursor.x = Math.max(4, Math.min(CONFIG.CANVAS_WIDTH - 4, state.buildCursor.x + movement[0])); state.buildCursor.y = Math.max(4, Math.min(CONFIG.CANVAS_HEIGHT - 4, state.buildCursor.y + movement[1])); state.buildCursor.active = true;
   } else if (event.key === 'Enter') { event.preventDefault(); placeTower(state.buildCursor.x, state.buildCursor.y); }
   else if (event.key === 'Escape') { event.preventDefault(); clearSelection(); }
 });
