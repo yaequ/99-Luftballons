@@ -1,7 +1,7 @@
 import { CONFIG } from '../game/modules/ai-config.js';
 import { createSide } from '../game/modules/ai-state.js';
 import { mapPathPoint, canBuildAt } from '../game/modules/ai-building.js';
-import { createTower, mergeTowers, canMergeTowers, towerDamage } from '../game/modules/towers.js';
+import { createTower, mergeTowers, canMergeTowers, towerDamage, dropTower } from '../game/modules/towers.js';
 import { sendBatchSize, isSendUnlocked } from '../game/modules/sending.js';
 import { grantRoundGold } from '../game/modules/economy.js';
 import { updateMergeEffect } from '../game/modules/merge-effects.js';
@@ -66,6 +66,18 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
   function mergeTower(sourceIndex, targetIndex, purchased = false) {
     return mergeTowerFor('player', sourceIndex, targetIndex, purchased);
   }
+
+  function moveTowerFor(owner, sourceIndex, x, y) {
+    if (state.result) return 'finished';
+    const side = sideFor(owner);
+    const source = side.towers[sourceIndex];
+    if (!source || !Number.isFinite(x) || !Number.isFinite(y)) return 'missing';
+    const outcome = dropTower(side, source, x, y);
+    if (outcome.result === 'move') notify();
+    return outcome.result === 'move' ? true : outcome.result;
+  }
+
+  function moveTower(sourceIndex, x, y) { return moveTowerFor('player', sourceIndex, x, y); }
 
   function spawnBalloon(targetSide, type, fromRound = false, random = Math.random) {
     const balloon = CONFIG.BALLOONS[type];
@@ -313,7 +325,7 @@ function createMultiplayerEngine(playerMap, opponentMap, callbacks = {}) {
     notify(); return true;
   }
 
-  return { state, buildTower, buildTowerFor, mergeTower, mergeTowerFor,
+  return { state, buildTower, buildTowerFor, mergeTower, mergeTowerFor, moveTower, moveTowerFor,
     sendBalloon, sendBalloonFor, startRound, update, setPaused, exportSnapshot, restoreSnapshot };
 }
 

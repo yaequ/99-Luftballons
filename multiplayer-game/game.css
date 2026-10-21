@@ -18,6 +18,8 @@
 }
 
 .mp-game-canvas--readonly { cursor: default; }
+.mp-game-canvas.has-hovered-tower { cursor: grab; }
+.mp-game-canvas.is-dragging-tower { cursor: grabbing; }
 
 .mp-canvas-status {
     position: absolute;
@@ -118,6 +120,7 @@
 .mp-tower-card small { color: var(--mp-muted); font-size: 9px; }
 .mp-tower-card em { width: fit-content; display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; padding: 3px 8px 3px 5px; border: 1px solid #ead7aa; border-radius: 999px; background: #fff8dc; color: #9b6411; font-size: 11px; font-style: normal; font-weight: 900; }
 .mp-tower-card em img { width: 18px; height: 18px; object-fit: contain; }
+.mp-tower-card em img[hidden] { display: none; }
 
 .mp-attack-panel .mp-kicker { color: var(--mp-red); }
 .mp-balloon-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }

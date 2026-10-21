@@ -172,7 +172,7 @@ function multiplayer_build_zones(int $side): array
 
 function multiplayer_tower_layout(PDO $pdo, int $matchId, int $side): array
 {
-    $query = $pdo->prepare("SELECT event_type, payload FROM multiplayer_game_events WHERE match_id = ? AND actor_side = ? AND event_type IN ('build', 'merge') ORDER BY id");
+    $query = $pdo->prepare("SELECT event_type, payload FROM multiplayer_game_events WHERE match_id = ? AND actor_side = ? AND event_type IN ('build', 'merge', 'move') ORDER BY id");
     $query->execute([$matchId, $side]);
     $towers = [];
     foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $event) {
@@ -181,6 +181,14 @@ function multiplayer_tower_layout(PDO $pdo, int $matchId, int $side): array
         if ($event['event_type'] === 'build') {
             $towers[] = ['type' => (string) ($payload['tower'] ?? ''), 'x' => (float) ($payload['x'] ?? 0),
                 'y' => (float) ($payload['y'] ?? 0), 'level' => 1];
+            continue;
+        }
+        if ($event['event_type'] === 'move') {
+            $source = (int) ($payload['source'] ?? -1);
+            if (isset($towers[$source])) {
+                $towers[$source]['x'] = (float) ($payload['x'] ?? 0);
+                $towers[$source]['y'] = (float) ($payload['y'] ?? 0);
+            }
             continue;
         }
         $target = (int) ($payload['target'] ?? -1);
@@ -224,6 +232,26 @@ function multiplayer_validate_merge(PDO $pdo, int $matchId, int $side, int $sour
         || $towers[$source]['type'] !== $towers[$target]['type']
         || $towers[$source]['level'] !== $towers[$target]['level']) {
         throw new InvalidArgumentException('Diese Türme lassen sich nicht verschmelzen.');
+    }
+}
+
+function multiplayer_validate_move(PDO $pdo, int $matchId, int $side, int $source, float $x, float $y): void
+{
+    $towers = multiplayer_tower_layout($pdo, $matchId, $side);
+    if (!isset($towers[$source])) throw new InvalidArgumentException('Der ausgewählte Turm existiert nicht.');
+    $inside = false;
+    foreach (multiplayer_build_zones($side) as $zone) {
+        if ($x >= $zone['x'] && $x <= $zone['x'] + $zone['w']
+            && $y >= $zone['y'] && $y <= $zone['y'] + $zone['h']) {
+            $inside = true;
+            break;
+        }
+    }
+    if (!$inside) throw new InvalidArgumentException('Der Zielpunkt liegt nicht auf einer Baufläche.');
+    foreach ($towers as $index => $tower) {
+        if ($index !== $source && hypot($tower['x'] - $x, $tower['y'] - $y) < 12) {
+            throw new InvalidArgumentException('Der Zielpunkt ist bereits belegt.');
+        }
     }
 }
 
@@ -283,6 +311,18 @@ function multiplayer_record_action(PDO $pdo, int $matchId, int $userId, string $
             multiplayer_validate_merge($pdo, $matchId, $side, $source, $target, $purchased);
             multiplayer_insert_event($pdo, $matchId, $side, 'merge', $actionId,
                 ['source' => $source, 'target' => $target, 'purchased' => $purchased]);
+        } elseif ($action === 'move') {
+            $source = filter_var($input['source'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 99]]);
+            $x = filter_var($input['x'] ?? null, FILTER_VALIDATE_FLOAT);
+            $y = filter_var($input['y'] ?? null, FILTER_VALIDATE_FLOAT);
+            if ($source === false || $x === false || $y === false || $x < 0 || $x > 320 || $y < 0 || $y > 240) {
+                throw new InvalidArgumentException('Ungültige Turmverschiebung.');
+            }
+            $x = round((float) $x, 2);
+            $y = round((float) $y, 2);
+            multiplayer_validate_move($pdo, $matchId, $side, $source, $x, $y);
+            multiplayer_insert_event($pdo, $matchId, $side, 'move', $actionId,
+                ['source' => $source, 'x' => $x, 'y' => $y]);
         } elseif ($action === 'pause') {
             $paused = filter_var($input['paused'] ?? null, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             if ($paused === null) throw new InvalidArgumentException('Ungültiger Pausenstatus.');

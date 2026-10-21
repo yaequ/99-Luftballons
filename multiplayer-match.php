@@ -38,7 +38,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online-Match – 99 Luftballons</title>
     <link rel="stylesheet" href="multiplayer-game.css?v=multiplayer-ui-2">
-    <link rel="stylesheet" href="multiplayer-game/game.css?v=multiplayer-final-1">
+    <link rel="stylesheet" href="multiplayer-game/game.css?v=multiplayer-controls-2">
 </head>
 <body class="multiplayer-game-page">
     <main id="main-content" class="multiplayer-match-shell"
@@ -95,9 +95,9 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
             <div class="mp-tower-panel">
                 <div class="mp-control-heading"><div><span class="mp-kicker">Online · Verteidigung</span><h1 id="online-actions-title">Turm auswählen</h1></div><p>Wird live mit deinem Gegner synchronisiert</p></div>
                 <div class="mp-tower-grid">
-                    <button class="mp-tower-card" data-tower="cactus" type="button" aria-pressed="false"><canvas data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span><strong>Kaktus</strong><small>Schneller Schaden</small><em><img src="assets/img/goldnugget.png" alt="">50</em></span></button>
-                    <button class="mp-tower-card" data-tower="fan" type="button" aria-pressed="false"><canvas data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span><strong>Gebläse</strong><small>Kurze Abklingzeit</small><em><img src="assets/img/goldnugget.png" alt="">90</em></span></button>
-                    <button class="mp-tower-card" data-tower="lens" type="button" aria-pressed="false"><canvas data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span><strong>Lupe</strong><small>Hoher Schaden</small><em><img src="assets/img/goldnugget.png" alt="">150</em></span></button>
+                    <button class="mp-tower-card" data-tower="cactus" type="button" aria-pressed="false"><canvas data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span><strong>Kaktus</strong><small>Schneller Schaden</small><em><img src="assets/img/goldnugget.png" alt=""><span class="mp-price-value">Gratis</span></em></span></button>
+                    <button class="mp-tower-card" data-tower="fan" type="button" aria-pressed="false"><canvas data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span><strong>Gebläse</strong><small>Kurze Abklingzeit</small><em><img src="assets/img/goldnugget.png" alt=""><span class="mp-price-value">Gratis</span></em></span></button>
+                    <button class="mp-tower-card" data-tower="lens" type="button" aria-pressed="false"><canvas data-portrait="lens" width="92" height="72" aria-hidden="true"></canvas><span><strong>Lupe</strong><small>Hoher Schaden</small><em><img src="assets/img/goldnugget.png" alt=""><span class="mp-price-value">Gratis</span></em></span></button>
                 </div>
             </div>
             <div class="mp-attack-panel">
@@ -136,6 +136,6 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
         </section>
     </main>
     <script src="multiplayer-room.js?v=multiplayer-final-1"></script>
-    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-upgrades-1"></script>
+    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-controls-2"></script>
 </body>
 </html>

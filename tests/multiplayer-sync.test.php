@@ -148,3 +148,16 @@ try {
     $invalidMerge = true;
 }
 sync_check($invalidMerge, 'The server rejects an incompatible upgrade');
+multiplayer_record_action($pdo, 5, 1, 'move', 'upgrade-move-00001', ['source' => 1, 'x' => 150, 'y' => 30]);
+sync_check(multiplayer_tower_layout($pdo, 5, 1)[1]['x'] === 150.0,
+    'The server replays a moved tower at its new position');
+multiplayer_record_action($pdo, 5, 1, 'build', 'upgrade-build-0005', ['tower' => 'lens', 'x' => 130, 'y' => 30]);
+sync_check(multiplayer_tower_layout($pdo, 5, 1)[2]['type'] === 'lens',
+    'Moving frees the former build position for another tower');
+$invalidMove = false;
+try {
+    multiplayer_record_action($pdo, 5, 1, 'move', 'upgrade-move-00002', ['source' => 1, 'x' => 110, 'y' => 30]);
+} catch (InvalidArgumentException) {
+    $invalidMove = true;
+}
+sync_check($invalidMove, 'The server rejects moving onto another tower');

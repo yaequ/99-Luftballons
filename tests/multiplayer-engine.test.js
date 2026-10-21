@@ -21,6 +21,15 @@ check(engine.mergeTower(0, 1) === true && engine.state.player.towers[0].level ==
 check(engine.mergeTower(1, 2) === true && engine.state.player.towers[1].level === 2, 'A second level-2 tower can be made');
 check(engine.mergeTower(1, 0) === true && engine.state.player.towers[0].level === 3, 'Two level-2 towers merge into level 3');
 check(engine.state.player.towers[0].damage > 1, 'Upgraded tower damage uses the shared multiplier');
+engine.state.player.towers[0].cooldown = 0.35;
+check(engine.moveTower(0, 100, 80) === true && engine.state.player.towers[0].x === 100,
+  'An upgraded tower can move to a free build position');
+check(engine.state.player.towers[0].level === 3 && engine.state.player.towers[0].cooldown === 0.35,
+  'Moving preserves level and cooldown');
+check(engine.buildTower('cactus', 220, 40) === true, 'Another tower can be bought after merging');
+check(engine.moveTower(0, 220, 40) === 'occupied' && engine.state.player.towers[0].y === 80,
+  'Moving onto an occupied position leaves the tower untouched');
+check(engine.moveTower(0, 10, 10) === true, 'A valid free location can be used for a later move');
 
 const boughtUpgrade = createMultiplayerEngine(map, map);
 boughtUpgrade.buildTower('cactus', 100, 40);
@@ -59,6 +68,12 @@ check(sideOne.state.enemy.balloons[0].type === sideTwo.state.player.balloons[0].
 
 sideOne.buildTowerFor('player', 'fan', 140, 40, true);
 sideTwo.buildTowerFor('enemy', 'fan', 140, 40, true);
+sideOne.moveTowerFor('player', 0, 180, 40);
+sideTwo.moveTowerFor('enemy', 0, 180, 40);
+check(sideOne.state.player.towers[0].x === sideTwo.state.enemy.towers[0].x,
+  'A move event replays at the same position in both browser perspectives');
+sideOne.state.player.gold = 200;
+sideTwo.state.enemy.gold = 200;
 sideOne.mergeTowerFor('player', 0, 0, true);
 sideTwo.mergeTowerFor('enemy', 0, 0, true);
 check(sideOne.state.player.towers[0].level === sideTwo.state.enemy.towers[0].level
@@ -81,6 +96,8 @@ check(restoredOne.state.enemy.balloons.length === sideOne.state.enemy.balloons.l
   'Travelling balloons survive a snapshot');
 check(restoredTwo.restoreSnapshot(saved) === true && restoredTwo.state.enemy.towers[1].level === 2,
   'Upgrades are mapped correctly in the opposite browser perspective');
+check(restoredTwo.state.enemy.towers[0].x === 180,
+  'A moved tower keeps its new position after perspective-safe restoration');
 check(restoredTwo.state.currentRound === sideOne.state.currentRound && restoredTwo.state.player.gold === sideOne.state.enemy.gold,
   'Rounds and resources restore in absolute-side order');
 
