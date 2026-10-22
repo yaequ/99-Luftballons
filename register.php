@@ -7,6 +7,7 @@ require __DIR__ . '/db.php';
 require __DIR__ . '/account-security.php';
 require __DIR__ . '/mailer.php';
 
+// Angemeldete Nutzer benötigen die Registrierungsseite nicht mehr.
 if (isset($_SESSION['user_id'])) {
     header('Location: menu.php');
     exit;
@@ -18,16 +19,20 @@ $email = '';
 $registered = false;
 $mailSent = false;
 
+// Das Formular wird nur nach dem Absenden verarbeitet.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Leerzeichen entfernen und E-Mail-Adressen einheitlich klein schreiben.
     $username = trim($_POST['username'] ?? '');
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
     $passwordConfirmation = $_POST['password_confirmation'] ?? '';
 
+    // Sicherheits-Token und Eingaben werden vor dem Datenbankzugriff geprüft.
     if (!valid_csrf($_POST)) {
         $errors[] = 'Die Anfrage ist abgelaufen. Bitte versuche es erneut.';
     }
 
+    // Fehlende oder ungültige Angaben werden gesammelt und später gemeinsam angezeigt.
     if ($username === '') {
         $errors[] = 'Bitte gib einen Benutzernamen ein.';
     } elseif (strlen($username) < 3 || strlen($username) > 50) {
@@ -52,13 +57,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Die beiden Passwörter stimmen nicht überein.';
     }
 
+    // Bereits vergebene Namen und E-Mail-Adressen dürfen nicht erneut verwendet werden.
     if ($errors === []) {
+        // Platzhalter (?) trennen die Nutzereingaben von der SQL-Anweisung.
         $statement = $pdo->prepare(
             'SELECT username, email FROM users WHERE username = ? OR email = ?'
         );
         $statement->execute([$username, $email]);
         $existingUsers = $statement->fetchAll();
 
+        // Groß- und Kleinschreibung soll keine doppelten Konten ermöglichen.
         foreach ($existingUsers as $existingUser) {
             if (strcasecmp($existingUser['username'], $username) === 0) {
                 $errors[] = 'Dieser Benutzername ist bereits vergeben.';
@@ -70,7 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Nur gültige, noch freie Kontodaten werden gespeichert.
     if ($errors === []) {
+        // Das Klartextpasswort wird niemals in der Datenbank gespeichert.
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
         try {
             $statement = $pdo->prepare(
@@ -80,15 +90,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             $statement->execute([$username, $email, $passwordHash]);
             $registered = true;
+            // Das neue Konto ist zunächst unbestätigt; der Link gilt 24 Stunden.
             $token = issue_auth_token($pdo, (int) $pdo->lastInsertId(), 'verify_email', 86400);
+            // Der zufällige Token wird als URL-Parameter an die Bestätigungsseite übergeben.
             $verificationLink = rtrim((string) $config['app_url'], '/') . '/verify-email.php?token=' . urlencode((string) $token);
             try {
+                // Die Nachricht enthält eine HTML-Version und eine reine Text-Version.
                 send_app_mail($config, $email, $username, 'E-Mail-Adresse bestätigen', mail_layout('E-Mail-Adresse bestätigen', 'Bestätige deine E-Mail-Adresse, um dein Basislager freizuschalten. Der Link ist 24 Stunden gültig.', 'E-Mail bestätigen', $verificationLink), "E-Mail-Adresse bestätigen (24 Stunden gültig):\n$verificationLink");
                 $mailSent = true;
             } catch (Throwable $mailError) {
+                // Das Konto bleibt bestehen; der Link kann später erneut angefordert werden.
                 error_log('Registration verification mail failed: ' . get_class($mailError));
             }
         } catch (PDOException $exception) {
+            // Auch bei gleichzeitigen Registrierungen fängt die Datenbank doppelte Werte ab.
             if ($exception->getCode() === '23000') {
                 $errors[] = 'Benutzername oder E-Mail-Adresse sind bereits vergeben.';
             } else {
