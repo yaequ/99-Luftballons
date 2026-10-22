@@ -114,7 +114,7 @@ require_once __DIR__ . '/../account-security.php';
 
           <footer class="control-dock">
             <section class="control-panel" aria-labelledby="tower-panel-title">
-            <div class="panel-heading"><div><span class="panel-kicker">Verteidigung</span><h2 id="tower-panel-title">Turm auswählen</h2></div><span class="panel-hint">Danach Baufläche anklicken oder Tastatur verwenden</span></div>
+            <div class="panel-heading"><div><span class="panel-kicker">Verteidigung</span><h2 id="tower-panel-title">Turm auswählen</h2></div><span class="panel-hint">Danach eine dunkle Baufläche anklicken</span></div>
             <div class="action-grid action-grid--towers">
               <button class="action-card build-btn" data-tower="cactus" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="cactus" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Kaktus</strong><span class="action-card__meta">Schneller Schaden</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>50</strong></span></span></button>
               <button class="action-card build-btn" data-tower="fan" type="button" aria-pressed="false"><canvas class="action-card__portrait" data-portrait="fan" width="92" height="72" aria-hidden="true"></canvas><span class="action-card__content"><strong class="action-card__name">Gebläse</strong><span class="action-card__meta">Kurze Abklingzeit</span><span class="price-chip action-card__cost"><img src="../assets/img/goldnugget.png" alt="" width="1254" height="1254"><strong>90</strong></span></span></button>
@@ -146,7 +146,7 @@ require_once __DIR__ . '/../account-security.php';
       <button id="btn-confirm-remove-tower" class="pixel-btn pixel-btn--primary" type="button">Ja, entfernen</button>
     </div>
   </dialog>
-  <script src="../first-round-tour.js?v=1"></script>
-  <script src="game.bundle.js?v=first-round-tour-1"></script>
+  <script src="../first-round-tour.js?v=2"></script>
+  <script src="game.bundle.js?v=first-round-tour-2"></script>
 </body>
 </html>

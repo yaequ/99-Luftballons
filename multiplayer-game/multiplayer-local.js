@@ -72,12 +72,12 @@ const firstRoundTour = window.FirstRoundTour?.create({
 const firstRoundSteps = [
   { target: '.mp-map-card:not(.mp-map-card--opponent)', title: 'Verteidige deine Basis', text: 'Auf deiner Karte verteidigst du den Weg. Erreichen Ballons das Ziel, verlierst du Lebenspunkte. Bei 0 ist das Duell verloren.' },
   { target: '.mp-tower-grid', title: 'Wähle deine Türme', text: 'Kaktus, Gebläse und Lupe haben unterschiedliche Stärken. Vor Runde 1 sind drei Platzierungen kostenlos.' },
-  { target: '#multiplayer-player-canvas', title: 'Bauen und verbessern', text: 'Wähle einen Turm und klicke auf eine dunkle Baufläche. Gleiche Türme derselben Stufe lassen sich aufeinanderziehen und verbessern.' },
+  { target: '#multiplayer-player-canvas', getSpotlightRect: () => window.FirstRoundTour.buildZoneRect(playerCanvas, playerMap), title: 'Bauen und verbessern', text: 'Wähle einen Turm und klicke auf eine dunkle Baufläche. Gleiche Türme derselben Stufe lassen sich aufeinanderziehen und verbessern.' },
   { target: '#multiplayer-start-round', title: 'Runde gemeinsam starten', text: 'Du und dein Gegenspieler müssen beide bereit sein. Erst dann startet die Ballonwelle auf beiden Karten.' },
   { target: '.mp-map-card--opponent', title: 'Sieh den Gegner', text: 'Rechts siehst du die gegnerische Karte. Fällt seine Basis auf 0 Lebenspunkte, gewinnst du.' },
   { target: '.mp-player-card:not(.mp-player-card--opponent) .mp-resources', title: 'Gold und Einkommen', text: 'Gold brauchst du für Türme und Ballonpakete. Dein Einkommen bringt jede Sekunde neues Gold.' },
-  { target: '.mp-balloon-grid', title: 'Sende Ballons', text: 'Ballonpakete greifen den Gegner an und steigern dein Einkommen. Zusätzliche Farben werden in späteren Runden freigeschaltet.' },
-  { target: '.mp-local-round-controls', title: 'Behalte die Kontrolle', text: 'Hier kannst du Auto-Start wählen und das Duell pausieren. Danach gibst du die erste Runde frei.' }
+  { target: '.mp-balloon-grid', title: 'Sende Ballons', text: 'Vor Runde 1 sind Ballons noch gesperrt. Sobald die Runde läuft, kannst du Ballonpakete kaufen, den Gegner angreifen und dein Einkommen erhöhen. Weitere Farben kommen später dazu.' },
+  { target: '.mp-local-round-controls label', title: 'Behalte die Kontrolle', text: 'Hier schaltest du Auto-Start für spätere Runden ein oder aus. Über „Pausieren“ kannst du das laufende Duell anhalten. Danach gibst du die erste Runde frei.' }
 ];
 
 const engine = createMultiplayerEngine(playerMap, opponentMap, {

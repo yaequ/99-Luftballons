@@ -1,5 +1,21 @@
 /* Shared, mouse-first onboarding for the first round of either game mode. */
 (() => {
+  function buildZoneRect(canvas, map, zoneIndex = 1) {
+    const zone = map?.buildZones?.[zoneIndex];
+    const image = map?.image;
+    if (!zone || !image?.naturalWidth || !image?.naturalHeight) return canvas.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    const visibleHeight = image.naturalHeight - map.hudCrop;
+    return {
+      left: canvasRect.left + zone.x / image.naturalWidth * canvasRect.width,
+      top: canvasRect.top + (zone.y - map.hudCrop) / visibleHeight * canvasRect.height,
+      width: zone.w / image.naturalWidth * canvasRect.width,
+      height: zone.h / visibleHeight * canvasRect.height,
+      get right() { return this.left + this.width; },
+      get bottom() { return this.top + this.height; }
+    };
+  }
+
   function create({ apiUrl, csrfToken }) {
     let running = false;
 
@@ -50,7 +66,7 @@
         if (closed) return;
         const target = document.querySelector(steps[index].target);
         if (!target) return;
-        const rect = target.getBoundingClientRect();
+        const rect = steps[index].getSpotlightRect?.() ?? target.getBoundingClientRect();
         const pad = 7;
         spotlight.style.left = `${Math.max(0, rect.left - pad)}px`;
         spotlight.style.top = `${Math.max(0, rect.top - pad)}px`;
@@ -136,5 +152,5 @@
     return { start };
   }
 
-  window.FirstRoundTour = { create };
+  window.FirstRoundTour = { create, buildZoneRect };
 })();
