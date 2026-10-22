@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../auth.php';
 require_login();
+require_once __DIR__ . '/../account-security.php';
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -14,8 +15,9 @@ require_login();
   <title>99 Luftballons – KI-Duell</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css?v=ai-upgrades-1">
+  <link rel="stylesheet" href="../first-round-tour.css?v=1">
 </head>
-<body>
+<body data-first-round-api="../first-round-tutorial-api.php" data-first-round-csrf="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
   <div id="game-app">
     <section id="screen-lobby" class="screen active" aria-labelledby="game-title">
       <div class="lobby-backdrop" aria-hidden="true"></div>
@@ -144,6 +146,7 @@ require_login();
       <button id="btn-confirm-remove-tower" class="pixel-btn pixel-btn--primary" type="button">Ja, entfernen</button>
     </div>
   </dialog>
-  <script src="game.bundle.js?v=ai-upgrades-1"></script>
+  <script src="../first-round-tour.js?v=1"></script>
+  <script src="game.bundle.js?v=first-round-tour-1"></script>
 </body>
 </html>

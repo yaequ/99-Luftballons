@@ -43,12 +43,11 @@ require __DIR__ . '/portal.php';
         <p><strong>Die Bosse:</strong> In Runde 29 kommt ein Boss, in Runde 30 kommen zwei. Jeder hat 150 HP und verursacht 25 Basisschaden, wenn er durchkommt. Bosse kannst du nicht selbst kaufen.</p>
     </section>
     <section class="portal-panel portal-section" id="controls">
-        <p class="eyebrow">Alles im Griff</p><h2>Maus und Tastatur.</h2>
+        <p class="eyebrow">Alles im Griff</p><h2>Steuerung mit der Maus.</h2>
         <dl class="controls-list">
-            <dt>Maus / Touch</dt><dd>Turm auswählen, anschließend eine passende Bauposition auf deiner Karte anklicken oder antippen.</dd>
-            <dt><kbd>Tab</kbd></dt><dd>Zwischen Schaltflächen und deiner Karte wechseln. Wähle einen Turm und fokussiere die Karte.</dd>
-            <dt><kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd></dt><dd>Den Baucursor auf der fokussierten Karte bewegen.</dd>
-            <dt><kbd>Enter</kbd> / <kbd>Escape</kbd></dt><dd>Den ausgewählten Turm platzieren / die Auswahl abbrechen.</dd>
+            <dt>Turm platzieren</dt><dd>Turm mit der Maus auswählen und anschließend eine passende Bauposition auf deiner Karte anklicken.</dd>
+            <dt>Turm verbessern</dt><dd>Einen neuen Turm auswählen und auf einen passenden Stufe-1-Turm klicken oder zwei platzierte Türme gleicher Art und Stufe aufeinanderziehen.</dd>
+            <dt>Turm verschieben oder entfernen</dt><dd>Zum Verschieben einen Turm mit gedrückter Maustaste auf eine freie Baufläche ziehen. Zum Entfernen den Turm anklicken und „Turm entfernen“ wählen.</dd>
             <dt>Pausieren</dt><dd>Mit der Schaltfläche über dem Spiel pausieren und anschließend fortsetzen.</dd>
             <dt>Interface ausblenden</dt><dd>Die Bedienflächen einklappen, um mehr Platz für die Karten zu haben.</dd>
         </dl>

@@ -39,8 +39,9 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
     <title>Online-Match – 99 Luftballons</title>
     <link rel="stylesheet" href="multiplayer-game.css?v=multiplayer-ui-2">
     <link rel="stylesheet" href="multiplayer-game/game.css?v=multiplayer-controls-3">
+    <link rel="stylesheet" href="first-round-tour.css?v=1">
 </head>
-<body class="multiplayer-game-page">
+<body class="multiplayer-game-page" data-first-round-api="first-round-tutorial-api.php" data-first-round-csrf="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
     <main id="main-content" class="multiplayer-match-shell"
           data-matchmaking-api="matchmaking-api.php"
           data-game-api="multiplayer-game-api.php"
@@ -149,6 +150,7 @@ $opponentMap = $maps[$side === 1 ? 2 : 1];
         </section>
     </main>
     <script src="multiplayer-room.js?v=multiplayer-final-1"></script>
-    <script type="module" src="multiplayer-game/multiplayer-local.js?v=multiplayer-controls-3"></script>
+    <script src="first-round-tour.js?v=1"></script>
+    <script type="module" src="multiplayer-game/multiplayer-local.js?v=first-round-tour-1"></script>
 </body>
 </html>

@@ -1,0 +1,20 @@
+.first-round-tour { position: fixed; inset: 0; z-index: 2000; pointer-events: none; font-family: "Trebuchet MS", system-ui, sans-serif; color: #243e44; }
+.first-round-tour__blocker { position: fixed; inset: 0; pointer-events: auto; }
+.first-round-tour__spotlight { position: fixed; border: 3px solid #f7d66e; border-radius: 17px; box-shadow: 0 0 0 9999px #102c30bb, 0 0 28px #f7d66e88; pointer-events: none; transition: left .2s, top .2s, width .2s, height .2s; }
+.first-round-tour__arrow { position: fixed; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.first-round-tour__arrow line { stroke: #f7d66e; stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 2px 2px #102c3099); }
+.first-round-tour__card { position: fixed; width: min(360px, calc(100vw - 28px)); max-height: calc(100vh - 28px); overflow-y: auto; padding: 22px; border: 2px solid #fff; border-radius: 20px; background: #fffdf6; box-shadow: 0 7px 0 #24433340, 0 22px 55px #102a2f75; pointer-events: auto; }
+.first-round-tour__eyebrow { display: flex; justify-content: space-between; gap: 12px; color: #377d4d; font-size: 11px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+.first-round-tour__progress { color: #688080; white-space: nowrap; }
+.first-round-tour__card h2 { margin: 11px 0 8px; font-family: ui-rounded, "Arial Rounded MT Bold", "Trebuchet MS", sans-serif; font-size: 23px; line-height: 1.15; }
+.first-round-tour__copy { margin: 0; color: #526c6d; font-size: 14px; line-height: 1.5; }
+.first-round-tour__actions { display: flex; align-items: center; gap: 7px; margin-top: 20px; }
+.first-round-tour__actions > span { flex: 1; }
+.first-round-tour__actions button { min-height: 39px; padding: 8px 12px; border: 1px solid #d6e2d4; border-radius: 11px; background: #f1f4e9; color: #243e44; font: inherit; font-size: 12px; font-weight: 900; cursor: pointer; }
+.first-round-tour__actions button:hover { filter: brightness(.96); }
+.first-round-tour__actions button:focus-visible { outline: 3px solid #d58b2d; outline-offset: 2px; }
+.first-round-tour__actions .first-round-tour__skip { border: 0; background: transparent; color: #687d7d; }
+.first-round-tour__actions .first-round-tour__next { border-color: #347349; background: linear-gradient(#58a564, #387c4d); color: #fff; }
+.first-round-tour__actions button[hidden] { display: none; }
+@media (max-width: 600px) { .first-round-tour__card { padding: 17px; } .first-round-tour__card h2 { font-size: 20px; } }
+@media (prefers-reduced-motion: reduce) { .first-round-tour__spotlight { transition: none; } }

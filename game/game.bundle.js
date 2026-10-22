@@ -1765,6 +1765,22 @@ let lastFrameTime = 0;
 let accumulator = 0;
 let toastTimer = 0;
 let startPending = false;
+let firstRoundPending = false;
+
+const firstRoundTour = window.FirstRoundTour?.create({
+  apiUrl: document.body.dataset.firstRoundApi,
+  csrfToken: document.body.dataset.firstRoundCsrf
+});
+const firstRoundSteps = [
+  { target: '.map-panel--player', title: 'Verteidige deine Basis', text: 'Links liegt deine Karte. Erreichen Ballons das Ende des Wegs, verlierst du Lebenspunkte. Bei 0 ist die Partie verloren.' },
+  { target: '.action-grid--towers', title: 'Wähle deine Türme', text: 'Kaktus, Gebläse und Lupe haben unterschiedliche Stärken. Vor Runde 1 darfst du drei Türme kostenlos platzieren.' },
+  { target: '#canvas-player', title: 'Bauen und verbessern', text: 'Klicke nach der Turmauswahl auf eine dunkle Baufläche. Gleiche Türme derselben Stufe kannst du aufeinanderziehen und so bis Stufe 3 verbessern.' },
+  { target: '#btn-start-round', title: 'Starte die Runde', text: 'Mit diesem Knopf beginnt die Ballonwelle. Nach jeder Runde kannst du die nächste Runde selbst starten oder Auto-Start nutzen.' },
+  { target: '.map-panel--enemy', title: 'Greife die KI an', text: 'Rechts siehst du die gegnerische Karte. Sinkt die KI-Basis auf 0 Lebenspunkte, gewinnst du.' },
+  { target: '.combatant-card--player .combatant-metrics', title: 'Gold und Einkommen', text: 'Gold brauchst du für weitere Türme und Ballons. Dein Einkommen bringt jede Sekunde neues Gold.' },
+  { target: '.action-grid--balloons', title: 'Sende Ballons', text: 'Kaufe Ballonpakete, um die KI anzugreifen und dein Einkommen zu erhöhen. Weitere Farben werden in späteren Runden freigeschaltet.' },
+  { target: '.round-toolbar', title: 'Behalte die Kontrolle', text: 'Hier kannst du Auto-Start ein- oder ausschalten und das Spiel pausieren. Danach geht es mit der ersten Runde los!' }
+];
 
 let gameState = createInitialState();
 const { renderSide, renderTowerPortraits, renderBalloonPortraits } = createRenderer(() => gameState, mousePos, () => towerControls.view);
@@ -1808,16 +1824,26 @@ async function loadMatchAssets() {
 document.getElementById('btn-return-lobby').addEventListener('click', returnToHomepage);
 document.getElementById('btn-retry-load').addEventListener('click', () => startGame(true));
 document.getElementById('btn-cancel-load').addEventListener('click', returnToHomepage);
+function startFirstRound() {
+  if (gameState.active || gameState.currentRound !== 0) return;
+  gameState.preparing = false;
+  gameState.player.freeBuildsRemaining = 0;
+  gameState.active = true;
+  clearTowerSelection();
+  lastFrameTime = performance.now();
+  accumulator = 0;
+  animationFrameId = requestAnimationFrame(gameLoop);
+  startNextRound();
+}
+
 ui.startRound.addEventListener('click', () => {
   if (startPending || gameState.paused) return;
   if (!gameState.active && gameState.currentRound === 0) {
-    gameState.preparing = false;
-    gameState.player.freeBuildsRemaining = 0;
-    gameState.active = true;
-    clearTowerSelection();
-    lastFrameTime = performance.now();
-    accumulator = 0;
-    animationFrameId = requestAnimationFrame(gameLoop);
+    if (firstRoundPending) return;
+    firstRoundPending = true;
+    if (firstRoundTour) firstRoundTour.start(firstRoundSteps, () => { firstRoundPending = false; startFirstRound(); });
+    else { firstRoundPending = false; startFirstRound(); }
+    return;
   }
   startNextRound();
 });
